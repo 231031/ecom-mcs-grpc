@@ -1,0 +1,179 @@
+services:
+  account:
+    container_name: ecom_account
+    build: 
+      context: .
+      dockerfile: ./account/app.Dockerfile
+    depends_on:
+      - account_db
+    env_file:
+      - ./.env
+    environment:
+      - DATABASE_URL=postgres://${ACCOUNT_POST_USER}:${ACCOUNT_POST_PASSWORD}@account_db/${ACCOUNT_POST_DB}?sslmode=disable
+    volumes:
+      - ./account:/go/src/app/account
+      - ./go.mod:/go/src/app/go.mod
+      - ./go.sum:/go/src/app/go.sum
+    restart: on-failure
+    networks:
+      - ecom_networks
+  catalog:
+    container_name: ecom_catalog
+    build: 
+      context: .
+      dockerfile: ./catalog/app.Dockerfile
+    depends_on:
+      - catalog_elastic
+    env_file:
+      - ./.env
+    environment:
+      - DATABASE_URL=http://catalog_elastic:${ELASTIC_PORT}
+    volumes:
+      - ./catalog:/go/src/app/catalog
+      - ./go.mod:/go/src/app/go.mod
+      - ./go.sum:/go/src/app/go.sum
+    restart: on-failure
+    networks:
+      - ecom_networks
+  order:
+    container_name: ecom_order
+    build:
+      context: .
+      dockerfile: ./order/app.Dockerfile 
+    depends_on:
+      - order_db
+    env_file:
+      - ./.env
+    environment:
+      - DATABASE_URL=postgres://${ORDER_POST_USER}:${ORDER_POST_PASSWORD}@order_db/${ORDER_POST_DB}?sslmode=disable
+      - ACCOUNT_SERVICE_URL=account:${ACCOUNT_PORT}
+      - CATALOG_SERVICE_URL=catalog:${CATALOG_PORT}
+    volumes:
+      - ./order:/go/src/app/order
+      - ./catalog:/go/src/app/catalog
+      - ./account:/go/src/app/account
+      - ./go.mod:/go/src/app/go.mod
+      - ./go.sum:/go/src/app/go.sum
+    restart: on-failure
+    networks:
+      - ecom_networks
+  graphql:
+    container_name: ecom_graphql
+    build: 
+      context: .
+      dockerfile: ./graphql/app.Dockerfile
+    ports:
+      - ${GRAPHQL_PORT}:${GRAPHQL_PORT}
+    depends_on:
+      - account
+      - catalog
+      - order
+    env_file:
+      - ./.env
+    environment:
+      - ACCOUNT_SERVICE_URL=account:${ACCOUNT_PORT}
+      - CATALOG_SERVICE_URL=catalog:${CATALOG_PORT}
+      - ORDER_SERVICE_URL=order:${ORDER_PORT}
+    volumes:
+      - ./graphql:/go/src/app/graphql
+      - ./order:/go/src/app/order
+      - ./catalog:/go/src/app/catalog
+      - ./account:/go/src/app/account
+      - ./go.mod:/go/src/app/go.mod
+      - ./go.sum:/go/src/app/go.sum
+    networks:
+      - ecom_networks
+  account_db:
+    container_name: account_db
+    build: 
+      context: ./account
+      dockerfile: db.Dockerfile
+    env_file:
+      - ./.env
+    environment:
+      - POSTGRES_DB=${ACCOUNT_POST_DB}
+      - POSTGRES_USER=${ACCOUNT_POST_USER}
+      - POSTGRES_PASSWORD=${ACCOUNT_POST_PASSWORD}
+    restart: on-failure
+    networks:
+      - ecom_networks
+    volumes:
+      - accounts_data:/var/lib/postgres/data
+  order_db:
+    container_name: order_db
+    build: 
+      context: ./order
+      dockerfile: db.Dockerfile
+    env_file:
+      - ./.env
+    environment: 
+      - POSTGRES_DB=${ORDER_POST_DB}
+      - POSTGRES_USER=${ORDER_POST_USER}
+      - POSTGRES_PASSWORD=${ORDER_POST_PASSWORD}
+    restart: on-failure
+    networks:
+      - ecom_networks
+    volumes:
+      - orders_data:/var/lib/postgresql/data
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:9
+    env_file:
+      - ./.env
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PG_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PG_PASSWORD}
+      - PGADMIN_LISTEN_PORT=${PG_PORT}
+    restart: on-failure
+    ports:
+      - "${PG_PORT}:${PG_PORT}"
+    networks:
+      - ecom_networks
+  catalog_elastic:
+    container_name: catalog_elastic
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.16.3
+    env_file:
+      - ./.env
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g
+      - http.host=0.0.0.0
+      - cluster.name=ecom-cluster-1
+      - node.name=node01
+      - xpack.license.self_generated.type=basic
+      # - xpack.security.enabled=false
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+    ports:
+      - "${ELASTIC_PORT}:${ELASTIC_PORT}"
+    networks:
+      - ecom_networks
+    volumes:
+      - es_data01:/usr/share/elasticsearch/data
+      - ./kibana.yml:/usr/share/kibana/config/kibana.yml
+  kibana:
+    container_name: ecom_kibiana
+    image: docker.elastic.co/kibana/kibana:8.16.3 
+    ports:
+      - "${KIBANA_PORT}:${KIBANA_PORT}"
+    depends_on:
+      - catalog_elastic  
+    env_file:
+      - ./.env
+    environment:
+      - ELASTICSEARCH_HOSTS=http://catalog_elastic:${ELASTIC_PORT}
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD} ELASTICSEARCH_PASSWORD
+    networks:
+      - ecom_networks
+
+volumes:
+  accounts_data:
+  orders_data:
+  es_data01:
+
+networks:
+  ecom_networks:
+    driver: bridge

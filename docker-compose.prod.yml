@@ -1,0 +1,71 @@
+services:
+  account:
+    build: 
+      context: .
+      dockerfile: ./account/app.prod.Dockerfile
+    depends_on:
+      - account_db
+    environment:
+      - DATABASE_URL=postgres://231031:12345@account_db/accounts?sslmode=disable
+    restart: on-failure
+  catalog:
+    build: 
+      context: .
+      dockerfile: ./catalog/app.prod.Dockerfile
+    depends_on:
+      - catalog_db
+    environment:
+      - DATABASE_URL=http://catalog_db:9200
+    restart: on-failure
+  order:
+    build:
+      context: .
+      dockerfile: ./order/app.prod.Dockerfile 
+    depends_on:
+      - order_db
+    environment:
+      - DATABASE_URL=postgres://231031:12345@order_db/orders?sslmode=disable
+      - ACCOUNT_SERVICE_URL=account:50001
+      - CATALOG_SERVICE_URL=catalog:50002
+    restart: on-failure
+  graphql:
+    build: 
+      context: .
+      dockerfile: ./graphql/app.prod.Dockerfile
+    ports:
+      - 8080:8080
+    depends_on:
+      - account
+      - catalog
+      - order
+    environment:
+      - ACCOUNT_SERVICE_URL=account:50001
+      - CATALOG_SERVICE_URL=catalog:50002
+      - ORDER_SERVICE_URL=order:50003
+  # account_db:
+  #   build: 
+  #     context: ./account
+  #     dockerfile: db.Dockerfile
+  #   environment:
+  #     - POSTGRES_DB=accounts
+  #     - POSTGRES_USER=231031
+  #     - POSTGRES_PASSWORD=12345
+  #   restart: on-failure
+  # catalog_db:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:8.16.3
+  #   environment:
+  #     - discovery.type=single-node
+  #     - ES_JAVA_OPTS=-Xms1g -Xmx1g
+  #     - xpack.security.enabled=false
+  #     - http.host=0.0.0.0
+  #   ports:
+  #     - "9200:9200"
+  # order_db:
+  #   build: 
+  #     context: ./order
+  #     dockerfile: db.Dockerfile
+  #   environment:
+  #     - POSTGRES_DB=orders
+  #     - POSTGRES_USER=231031
+  #     - POSTGRES_PASSWORD=12345
+  #   restart: on-failure
