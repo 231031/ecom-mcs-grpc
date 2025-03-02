@@ -3,17 +3,86 @@
 package graphql
 
 import (
+	"fmt"
+	"io"
+	"strconv"
 	"time"
 )
 
-type Account struct {
-	ID     string   `json:"id"`
-	Name   string   `json:"name"`
-	Orders []*Order `json:"orders"`
+type BaseInfo interface {
+	IsBaseInfo()
+	GetID() string
+	GetEmail() string
+	GetFirstName() string
+	GetLastName() string
+	GetPhone() string
+	GetAddress() string
 }
 
-type AccountInput struct {
-	Name string `json:"name"`
+type LoginResult interface {
+	IsLoginResult()
+}
+
+type AccountBuyer struct {
+	Token     *string  `json:"token,omitempty"`
+	Orders    []*Order `json:"orders"`
+	ID        string   `json:"id"`
+	Email     string   `json:"email"`
+	FirstName string   `json:"first_name"`
+	LastName  string   `json:"last_name"`
+	Phone     string   `json:"phone"`
+	Address   string   `json:"address"`
+}
+
+func (AccountBuyer) IsBaseInfo()               {}
+func (this AccountBuyer) GetID() string        { return this.ID }
+func (this AccountBuyer) GetEmail() string     { return this.Email }
+func (this AccountBuyer) GetFirstName() string { return this.FirstName }
+func (this AccountBuyer) GetLastName() string  { return this.LastName }
+func (this AccountBuyer) GetPhone() string     { return this.Phone }
+func (this AccountBuyer) GetAddress() string   { return this.Address }
+
+func (AccountBuyer) IsLoginResult() {}
+
+type AccountBuyerInput struct {
+	BaseInfo *BaseInfoInput `json:"base_info"`
+	Password string         `json:"password"`
+}
+
+type AccountSeller struct {
+	Token     *string    `json:"token,omitempty"`
+	StoreName string     `json:"store_name"`
+	Products  []*Product `json:"products"`
+	ID        string     `json:"id"`
+	Email     string     `json:"email"`
+	FirstName string     `json:"first_name"`
+	LastName  string     `json:"last_name"`
+	Phone     string     `json:"phone"`
+	Address   string     `json:"address"`
+}
+
+func (AccountSeller) IsBaseInfo()               {}
+func (this AccountSeller) GetID() string        { return this.ID }
+func (this AccountSeller) GetEmail() string     { return this.Email }
+func (this AccountSeller) GetFirstName() string { return this.FirstName }
+func (this AccountSeller) GetLastName() string  { return this.LastName }
+func (this AccountSeller) GetPhone() string     { return this.Phone }
+func (this AccountSeller) GetAddress() string   { return this.Address }
+
+func (AccountSeller) IsLoginResult() {}
+
+type AccountSellerInput struct {
+	StoreName string         `json:"store_name"`
+	BaseInfo  *BaseInfoInput `json:"base_info"`
+	Password  string         `json:"password"`
+}
+
+type BaseInfoInput struct {
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Phone     string `json:"phone"`
+	Address   string `json:"address"`
 }
 
 type Mutation struct {
@@ -21,28 +90,27 @@ type Mutation struct {
 
 type Order struct {
 	ID         string          `json:"id"`
-	Account    *Account        `json:"account"`
+	Account    *AccountBuyer   `json:"account"`
 	Products   []*OrderProduct `json:"products"`
-	TotalPrice float64         `json:"totalPrice"`
-	CreatedAt  time.Time       `json:"createdAt"`
+	TotalPrice float64         `json:"total_price"`
+	CreatedAt  time.Time       `json:"created_at"`
+	Address    string          `json:"address"`
 }
 
 type OrderInput struct {
-	AccountID string               `json:"accountId"`
+	AccountID string               `json:"account_id"`
 	Products  []*OrderProductInput `json:"products"`
+	Address   string               `json:"address"`
 }
 
 type OrderProduct struct {
-	ID          string  `json:"id"`
-	Name        string  `json:"name"`
-	Description string  `json:"description"`
-	Price       float64 `json:"price"`
-	Quantity    int     `json:"quantity"`
+	Product  *Product `json:"product"`
+	Quantity int      `json:"quantity"`
 }
 
 type OrderProductInput struct {
-	ID       string `json:"id"`
-	Quantity int    `json:"quantity"`
+	ProductID string `json:"product_id"`
+	Quantity  int    `json:"quantity"`
 }
 
 type PaginationInput struct {
@@ -56,9 +124,11 @@ type Product struct {
 	Description string  `json:"description"`
 	Price       float64 `json:"price"`
 	Quantity    int     `json:"quantity"`
+	SellerID    string  `json:"seller_id"`
 }
 
 type ProductInput struct {
+	SellerID    string  `json:"seller_id"`
 	Name        string  `json:"name"`
 	Description string  `json:"description"`
 	Price       float64 `json:"price"`
@@ -66,4 +136,45 @@ type ProductInput struct {
 }
 
 type Query struct {
+}
+
+type RoleType string
+
+const (
+	RoleTypeSeller RoleType = "SELLER"
+	RoleTypeBuyer  RoleType = "BUYER"
+)
+
+var AllRoleType = []RoleType{
+	RoleTypeSeller,
+	RoleTypeBuyer,
+}
+
+func (e RoleType) IsValid() bool {
+	switch e {
+	case RoleTypeSeller, RoleTypeBuyer:
+		return true
+	}
+	return false
+}
+
+func (e RoleType) String() string {
+	return string(e)
+}
+
+func (e *RoleType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = RoleType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid RoleType", str)
+	}
+	return nil
+}
+
+func (e RoleType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }

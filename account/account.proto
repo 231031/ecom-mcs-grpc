@@ -1,37 +1,84 @@
 syntax = "proto3";
 package proto;
 
-option go_package = "./";
+option go_package = "./pb";
 
-message Account {
+message AccountBuyer {
     string id = 1;
-    string name = 2;
+    BaseInfo base_info = 2;
 }
 
-message PostAccountRequest {
-    string name = 1;
-}
-message PostAccountResponse {
-    Account account = 1;
+message AccountSeller {
+    string id = 1;
+    BaseInfo base_info = 2;
+    string store_name = 3;
 }
 
-message GetAccountRequest {
+message BaseInfo {
+    string first_name = 1;
+    string last_name = 2;
+    string email = 3;
+    string phone = 4;
+    string address = 5;
+}
+
+message PostAccountBuyerRequest {
+    BaseInfo base_info = 1;
+    string password = 2;
+}
+
+message PostAccountBuyerResponse {
+    AccountBuyer account = 1;
+}
+
+message PostAccountSellerRequest {
+    BaseInfo base_info = 1;
+    string password = 2;
+    string store_name = 3;
+}
+
+message PostAccountSellerResponse {
+    AccountSeller account = 1;
+}
+
+message LoginAccountRequest {
+    string email = 1;
+    string password = 2;
+}
+
+message LoginAccountResponse {
+    string token = 1;
+    AccountBuyer buyer = 2;
+    AccountSeller seller = 3;
+}
+
+message GetAccountBuyerRequest {
     string id = 1;
 }
-message GetAccountResponse {
-    Account account = 1;
+
+message GetAccountBuyerResponse {
+    AccountBuyer account = 1;
 }
 
-message GetAccountsRequest {
+message GetAccountsSellerRequest {
     uint64 skip = 1;
     uint64 take = 2;
+    repeated string ids = 3;
 }
-message GetAccountsResponse {
-    repeated Account accounts = 1;
+
+message GetAccountsSellerResponse {
+    repeated AccountSeller accounts = 1;
 }
 
 service AccountService {
-    rpc PostAccount (PostAccountRequest) returns (PostAccountResponse) {}
-    rpc GetAccount (GetAccountRequest) returns (GetAccountResponse) {}
-    rpc GetAccounts (GetAccountsRequest) returns (GetAccountsResponse) {}
+    rpc PostAccountBuyer (PostAccountBuyerRequest) returns (PostAccountBuyerResponse) {}
+    rpc PostAccountSeller (PostAccountSellerRequest) returns (PostAccountSellerResponse) {}
+
+    rpc UpdateAccountSeller (AccountSeller) returns (AccountSeller) {}
+    rpc UpdateAccountBuyer (AccountBuyer) returns (AccountBuyer) {}
+
+    rpc GetAccountBuyer (GetAccountBuyerRequest) returns (AccountBuyer) {}
+    rpc GetAccountsSeller (GetAccountsSellerRequest) returns (GetAccountsSellerResponse) {}
+
+    rpc LoginAccount (LoginAccountRequest) returns (LoginAccountResponse) {}
 }

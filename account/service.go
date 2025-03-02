@@ -3,12 +3,16 @@ package account
 import (
 	"context"
 
+	"github.com/231031/ecom-mcs-grpc/account/utils"
 	"github.com/segmentio/ksuid"
 )
 
 type Service interface {
-	PostAccount(ctx context.Context, name string) (*Account, error)
-	GetAccount(ctx context.Context, id string) (*Account, error)
+	PostAccountSeller(ctx context.Context, a Seller) (*Seller, error)
+	PostAccountBuyer(ctx context.Context, a Buyer) (*Buyer, error)
+	UpdateAccountSeller(ctx context.Context, a Seller) (*Seller, error)
+	UpdateAccountBuyer(ctx context.Context, a Buyer) (*Buyer, error)
+	GetAccountBuyer(ctx context.Context, id string) (*Account, error)
 	GetAccounts(ctx context.Context, skip uint64, take uint64) ([]Account, error)
 }
 
@@ -25,19 +29,55 @@ func NewService(r Repository) Service {
 	return &AccountService{repository: r}
 }
 
-func (s *AccountService) PostAccount(ctx context.Context, name string) (*Account, error) {
-	a := &Account{
-		Name: name,
-		ID:   ksuid.New().String(),
-	}
+func (s *AccountService) PostAccountSeller(ctx context.Context, a Seller) (*Seller, error) {
+	a.ID = ksuid.New().String()
 
-	if err := s.repository.PutAccount(ctx, *a); err != nil {
+	hashed, err := utils.HashPassword(a.Password)
+	if err != nil {
 		return nil, err
 	}
-	return a, nil
+
+	a.Password = hashed
+	if err := s.repository.CreateAccountSeller(ctx, a); err != nil {
+		return nil, err
+	}
+	return &a, nil
 }
 
-func (s *AccountService) GetAccount(ctx context.Context, id string) (*Account, error) {
+func (s *AccountService) PostAccountBuyer(ctx context.Context, a Buyer) (*Buyer, error) {
+	a.ID = ksuid.New().String()
+
+	hashed, err := utils.HashPassword(a.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	a.Password = hashed
+	if err := s.repository.CreateAccountBuyer(ctx, a); err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
+func (s *AccountService) UpdateAccountBuyer(ctx context.Context, a Buyer) (*Buyer, error) {
+	err := s.repository.UpdateAccountBuyer(ctx, a)
+	if err != nil {
+		return nil, err
+	}
+
+	return &a, nil
+}
+
+func (s *AccountService) UpdateAccountSeller(ctx context.Context, a Seller) (*Seller, error) {
+	err := s.repository.UpdateAccountSeller(ctx, a)
+	if err != nil {
+		return nil, err
+	}
+
+	return &a, nil
+}
+
+func (s *AccountService) GetAccountBuyer(ctx context.Context, id string) (*Account, error) {
 	return s.repository.GetAccountByID(ctx, id)
 }
 

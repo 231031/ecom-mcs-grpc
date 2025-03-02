@@ -28,41 +28,81 @@ func (c *Client) Close() {
 	c.conn.Close()
 }
 
-func (c *Client) PostAccount(ctx context.Context, name string) (*Account, error) {
-	r, err := c.service.PostAccount(
-		ctx,
-		&pb.PostAccountRequest{Name: name},
-	)
+func (c *Client) PostAccountBuyer(ctx context.Context, in *pb.PostAccountBuyerRequest) (*Buyer, error) {
+	r, err := c.service.PostAccountBuyer(ctx, in)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	return &Account{
-		Name: r.Account.Name,
-		ID:   r.Account.Id,
+	return &Buyer{
+		ID: r.Account.Id,
+		BaseInfo: BaseInfo{
+			FirstName: r.Account.BaseInfo.FirstName,
+			LastName:  r.Account.BaseInfo.LastName,
+			Email:     r.Account.BaseInfo.Email,
+			Phone:     r.Account.BaseInfo.Phone,
+			Address:   r.Account.BaseInfo.Address,
+		},
 	}, nil
 }
 
+func (c *Client) PostAccountSeller(ctx context.Context, in *pb.PostAccountSellerRequest) (*Seller, error) {
+	r, err := c.service.PostAccountSeller(ctx, in)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	return &Seller{
+		ID:        r.Account.Id,
+		StoreName: r.Account.StoreName,
+		BaseInfo: BaseInfo{
+			FirstName: r.Account.BaseInfo.FirstName,
+			LastName:  r.Account.BaseInfo.LastName,
+			Email:     r.Account.BaseInfo.Email,
+			Phone:     r.Account.BaseInfo.Phone,
+			Address:   r.Account.BaseInfo.Address,
+		},
+	}, nil
+}
+
+func (c *Client) UpdateAccountBuyer(ctx context.Context, in *pb.AccountBuyer) (*pb.AccountBuyer, error) {
+	_, err := c.service.UpdateAccountBuyer(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
+}
+
+func (c *Client) UpdateAccountSeller(ctx context.Context, in *pb.AccountSeller) (*pb.AccountSeller, error) {
+	_, err := c.service.UpdateAccountSeller(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
+}
+
 func (c *Client) GetAccount(ctx context.Context, id string) (*Account, error) {
-	r, err := c.service.GetAccount(
+	r, err := c.service.GetAccountBuyer(
 		ctx,
-		&pb.GetAccountRequest{Id: id},
+		&pb.GetAccountBuyerRequest{Id: id},
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Account{
-		Name: r.Account.Name,
-		ID:   r.Account.Id,
+		ID: r.Id,
 	}, nil
 }
 
 func (c *Client) GetAccounts(ctx context.Context, skip uint64, take uint64) ([]Account, error) {
-	r, err := c.service.GetAccounts(
+	r, err := c.service.GetAccountsSeller(
 		ctx,
-		&pb.GetAccountsRequest{Skip: skip, Take: take},
+		&pb.GetAccountsSellerRequest{Skip: skip, Take: take},
 	)
 	if err != nil {
 		return nil, err
@@ -71,8 +111,7 @@ func (c *Client) GetAccounts(ctx context.Context, skip uint64, take uint64) ([]A
 	accounts := []Account{}
 	for _, a := range r.Accounts {
 		accounts = append(accounts, Account{
-			Name: a.Name,
-			ID:   a.Id,
+			ID: a.Id,
 		})
 	}
 

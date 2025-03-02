@@ -11,41 +11,54 @@ type queryResolver struct {
 	server *Server
 }
 
-func (r *queryResolver) Accounts(ctx context.Context, pagination *PaginationInput, id *string) ([]*Account, error) {
+func (r *queryResolver) Buyer(ctx context.Context, id string) (*AccountBuyer, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	if id != nil {
-		a, err := r.server.accountClient.GetAccount(ctx, *id)
+	if id != "" {
+		_, err := r.server.accountClient.GetAccount(ctx, id)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		return []*Account{{
-			ID:   a.ID,
-			Name: a.Name,
-		}}, nil
+		return nil, nil
 	}
 
-	skip := uint64(0)
-	take := uint64(0)
-	if pagination != nil {
-		skip, take = pagination.bounds()
-	}
-	accountLists, err := r.server.accountClient.GetAccounts(ctx, skip, take)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
+	// skip := uint64(0)
+	// take := uint64(0)
+	// accountLists, err := r.server.accountClient.GetAccounts(ctx, skip, take)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	return nil, err
+	// }
 
-	var accounts []*Account
-	for _, a := range accountLists {
-		account := &Account{
-			ID:   a.ID,
-			Name: a.Name,
+	var accounts *AccountBuyer
+	return accounts, nil
+}
+
+func (r *queryResolver) Sellers(ctx context.Context, pagination *PaginationInput, id *string) ([]*AccountSeller, error) {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	if id != nil {
+		_, err := r.server.accountClient.GetAccount(ctx, *id)
+		if err != nil {
+			log.Println(err)
+			return nil, err
 		}
-		accounts = append(accounts, account)
+		return []*AccountSeller{}, nil
 	}
+
+	// skip := uint64(0)
+	// take := uint64(0)
+	// accountLists, err := r.server.accountClient.GetAccounts(ctx, skip, take)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	return nil, err
+	// }
+
+	var accounts []*AccountSeller
+
 	return accounts, nil
 }
 
@@ -114,11 +127,13 @@ func (r *queryResolver) Orders(ctx context.Context, id *string) ([]*Order, error
 		var products []*OrderProduct
 		for _, p := range o.Products {
 			products = append(products, &OrderProduct{
-				ID:          p.ID,
-				Name:        p.Name,
-				Description: p.Description,
-				Price:       p.Price,
-				Quantity:    int(p.Quantity),
+				Product: &Product{
+					ID:          p.ID,
+					Name:        p.Name,
+					Description: p.Description,
+					Price:       p.Price,
+				},
+				Quantity: int(p.Quantity),
 			})
 		}
 

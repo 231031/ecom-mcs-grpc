@@ -1,9 +1,42 @@
 scalar Time
 
-type Account {
+enum RoleType {
+  SELLER
+  BUYER
+}
+
+interface BaseInfo {
     id: String!
-    name: String!
+    email: String!
+    first_name: String!
+    last_name: String!
+    phone: String!
+    address: String!
+}
+
+type AccountBuyer implements BaseInfo {
+    token: String
     orders: [Order!]!
+
+    id: String!
+    email: String!
+    first_name: String!
+    last_name: String!
+    phone: String!
+    address: String!
+}
+
+type AccountSeller implements BaseInfo {
+    token: String
+    store_name: String!
+    products: [Product!]!
+
+    id: String!
+    email: String!
+    first_name: String!
+    last_name: String!
+    phone: String!
+    address: String!
 }
 
 type Product {
@@ -12,22 +45,22 @@ type Product {
     description: String!
     price: Float!
     quantity: Int!
+
+    seller_id: String!
+}
+
+type OrderProduct {
+    product: Product!
+    quantity: Int!
 }
 
 type Order {
     id: String!
-    account: Account!
+    account: AccountBuyer!
     products: [OrderProduct!]!
-    totalPrice: Float!
-    createdAt: Time!
-}
-
-type OrderProduct {
-    id: String!
-    name: String!
-    description: String!
-    price: Float!
-    quantity: Int!
+    total_price: Float!
+    created_at: Time!
+    address: String!
 }
 
 input PaginationInput {
@@ -35,11 +68,27 @@ input PaginationInput {
     take: Int!
 }
 
-input AccountInput {
-    name: String!
+input BaseInfoInput {
+    email: String!
+    first_name: String!
+    last_name: String!
+    phone: String!
+    address: String!
+}
+
+input AccountSellerInput {
+    store_name: String!
+    base_info: BaseInfoInput!
+    password: String!
+}
+
+input AccountBuyerInput {
+    base_info: BaseInfoInput!
+    password: String!
 }
 
 input ProductInput {
+    seller_id: String!
     name: String!
     description: String!
     price: Float!
@@ -47,23 +96,38 @@ input ProductInput {
 }
 
 input OrderProductInput {
-    id: String!
+    product_id: String!
     quantity: Int!
 }
 
 input OrderInput {
-    accountId: String!
+    account_id: String!
     products: [OrderProductInput!]!
+    address: String!
 }
 
+union LoginResult = AccountBuyer | AccountSeller
+
 type Mutation {
-    createAccount(account: AccountInput!): Account!
+    createAccountSeller(account: AccountSellerInput!): AccountSeller!
+    updateAccountSeller(account: AccountSellerInput!, id: String!): AccountSeller!
+
+    createAccountBuyer(account: AccountBuyerInput!): AccountBuyer!
+    updateAccountBuyer(account: AccountBuyerInput!, id: String!): AccountBuyer!
+
+    loginAccount(email: String!, password: String!, role: RoleType!): LoginResult!
+
     createProduct(product: ProductInput!): Product!
+    updateProduct(product: ProductInput!, id: String!): Product!
+    deleteProduct(id: String!): String!
+
     createOrder(order: OrderInput!): Order!
+    deleteOrder(id: String!): String!
 }
 
 type Query {
-    accounts(pagination: PaginationInput, id: String): [Account!]!
+    buyer(id: String!): AccountBuyer!
+    sellers(pagination: PaginationInput, id: String): [AccountSeller!]!
     products(pagination: PaginationInput, query: String, id: String): [Product!]!
     orders(id: String): [Order!]!
 }
