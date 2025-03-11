@@ -10,10 +10,13 @@ import (
 type Service interface {
 	PostAccountSeller(ctx context.Context, a Seller) (*Seller, error)
 	PostAccountBuyer(ctx context.Context, a Buyer) (*Buyer, error)
+
 	UpdateAccountSeller(ctx context.Context, a Seller) (*Seller, error)
 	UpdateAccountBuyer(ctx context.Context, a Buyer) (*Buyer, error)
-	GetAccountBuyer(ctx context.Context, id string) (*Account, error)
-	GetAccounts(ctx context.Context, skip uint64, take uint64) ([]Account, error)
+
+	GetAccountSellerByID(ctx context.Context, id string) (*Seller, error)
+	GetAccountBuyerByID(ctx context.Context, id string) (*Buyer, error)
+	GetAccountSellers(ctx context.Context, ids []string, skip uint64, take uint64) ([]Seller, error)
 }
 
 type Account struct {
@@ -77,13 +80,22 @@ func (s *AccountService) UpdateAccountSeller(ctx context.Context, a Seller) (*Se
 	return &a, nil
 }
 
-func (s *AccountService) GetAccountBuyer(ctx context.Context, id string) (*Account, error) {
-	return s.repository.GetAccountByID(ctx, id)
+func (s *AccountService) GetAccountBuyerByID(ctx context.Context, id string) (*Buyer, error) {
+	return s.repository.GetBuyerByID(ctx, id)
 }
 
-func (s *AccountService) GetAccounts(ctx context.Context, skip uint64, take uint64) ([]Account, error) {
+func (s *AccountService) GetAccountSellerByID(ctx context.Context, id string) (*Seller, error) {
+	return s.repository.GetSellerByID(ctx, id)
+}
+
+func (s *AccountService) GetAccountSellers(ctx context.Context, ids []string, skip uint64, take uint64) ([]Seller, error) {
 	if take > 100 || (skip == 0 && take == 0) {
 		take = 100
 	}
-	return s.repository.ListAccounts(ctx, skip, take)
+
+	if ids != nil {
+		return s.repository.ListAccountSellersByID(ctx, ids)
+	} else {
+		return s.repository.ListAccountSellers(ctx, skip, take)
+	}
 }

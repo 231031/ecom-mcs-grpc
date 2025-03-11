@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+var (
+	ErrInvalidID = errors.New("id is not a valid")
+)
+
 type queryResolver struct {
 	server *Server
 }
@@ -16,50 +20,85 @@ func (r *queryResolver) Buyer(ctx context.Context, id string) (*AccountBuyer, er
 	defer cancel()
 
 	if id != "" {
-		_, err := r.server.accountClient.GetAccount(ctx, id)
+		a, err := r.server.accountClient.GetAccountBuyerByID(ctx, id)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		return nil, nil
+
+		return &AccountBuyer{
+			ID:        a.ID,
+			Email:     a.Email,
+			FirstName: a.FirstName,
+			LastName:  a.LastName,
+			Phone:     a.Phone,
+			Address:   a.Address,
+		}, nil
 	}
 
-	// skip := uint64(0)
-	// take := uint64(0)
-	// accountLists, err := r.server.accountClient.GetAccounts(ctx, skip, take)
-	// if err != nil {
-	// 	log.Println(err)
-	// 	return nil, err
-	// }
-
-	var accounts *AccountBuyer
-	return accounts, nil
+	return nil, ErrInvalidID
 }
 
-func (r *queryResolver) Sellers(ctx context.Context, pagination *PaginationInput, id *string) ([]*AccountSeller, error) {
+func (r *queryResolver) Seller(ctx context.Context, id string) (*AccountSeller, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	if id != nil {
-		_, err := r.server.accountClient.GetAccount(ctx, *id)
+	if id != "" {
+		a, err := r.server.accountClient.GetAccountSellerByID(ctx, id)
 		if err != nil {
 			log.Println(err)
 			return nil, err
 		}
-		return []*AccountSeller{}, nil
+
+		return &AccountSeller{
+			ID:        a.ID,
+			StoreName: a.StoreName,
+			Email:     a.Email,
+			FirstName: a.FirstName,
+			LastName:  a.LastName,
+			Phone:     a.Phone,
+			Address:   a.Address,
+		}, nil
 	}
 
-	// skip := uint64(0)
-	// take := uint64(0)
-	// accountLists, err := r.server.accountClient.GetAccounts(ctx, skip, take)
-	// if err != nil {
-	// 	log.Println(err)
-	// 	return nil, err
-	// }
+	return nil, ErrInvalidID
+}
 
-	var accounts []*AccountSeller
+func (r *queryResolver) Sellers(ctx context.Context, pagination *PaginationInput, ids []string) ([]*AccountSeller, error) {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
 
-	return accounts, nil
+	if ids != nil {
+		skip := uint64(0)
+		take := uint64(0)
+
+		if pagination != nil {
+			skip = uint64(pagination.Skip)
+			take = uint64(pagination.Take)
+		}
+
+		accounts, err := r.server.accountClient.GetAccountSellers(ctx, ids, skip, take)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+
+		var sellers = []*AccountSeller{}
+		for _, a := range accounts {
+			sellers = append(sellers, &AccountSeller{
+				ID:        a.ID,
+				Email:     a.Email,
+				FirstName: a.FirstName,
+				LastName:  a.LastName,
+				Phone:     a.Phone,
+				Address:   a.Address,
+			})
+		}
+		return sellers, nil
+	} else {
+	}
+
+	return nil, ErrInvalidID
 }
 
 func (r *queryResolver) Products(ctx context.Context, pagination *PaginationInput, query *string, id *string) ([]*Product, error) {

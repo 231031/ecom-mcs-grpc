@@ -85,35 +85,72 @@ func (c *Client) UpdateAccountSeller(ctx context.Context, in *pb.AccountSeller) 
 	return in, nil
 }
 
-func (c *Client) GetAccount(ctx context.Context, id string) (*Account, error) {
+func (c *Client) GetAccountBuyerByID(ctx context.Context, id string) (*Buyer, error) {
 	r, err := c.service.GetAccountBuyer(
 		ctx,
-		&pb.GetAccountBuyerRequest{Id: id},
+		&pb.GetAccountRequest{Id: id},
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Account{
+	return &Buyer{
 		ID: r.Id,
+		BaseInfo: BaseInfo{
+			Email:     r.BaseInfo.Email,
+			FirstName: r.BaseInfo.FirstName,
+			LastName:  r.BaseInfo.LastName,
+			Phone:     r.BaseInfo.Phone,
+			Address:   r.BaseInfo.Address,
+		},
 	}, nil
 }
 
-func (c *Client) GetAccounts(ctx context.Context, skip uint64, take uint64) ([]Account, error) {
-	r, err := c.service.GetAccountsSeller(
+func (c *Client) GetAccountSellerByID(ctx context.Context, id string) (*Seller, error) {
+	r, err := c.service.GetAccountSeller(
 		ctx,
-		&pb.GetAccountsSellerRequest{Skip: skip, Take: take},
+		&pb.GetAccountRequest{Id: id},
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	accounts := []Account{}
+	return &Seller{
+		ID:        r.Id,
+		StoreName: r.StoreName,
+		BaseInfo: BaseInfo{
+			Email:     r.BaseInfo.Email,
+			FirstName: r.BaseInfo.FirstName,
+			LastName:  r.BaseInfo.LastName,
+			Phone:     r.BaseInfo.Phone,
+			Address:   r.BaseInfo.Address,
+		},
+	}, nil
+}
+
+func (c *Client) GetAccountSellers(ctx context.Context, ids []string, skip uint64, take uint64) ([]Seller, error) {
+	r, err := c.service.GetAccountSellers(
+		ctx,
+		&pb.GetAccountSellersRequest{Ids: ids, Skip: skip, Take: take},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	sellers := []Seller{}
 	for _, a := range r.Accounts {
-		accounts = append(accounts, Account{
-			ID: a.Id,
+		sellers = append(sellers, Seller{
+			ID:        a.Id,
+			StoreName: a.StoreName,
+			BaseInfo: BaseInfo{
+				Email:     a.BaseInfo.Email,
+				FirstName: a.BaseInfo.FirstName,
+				LastName:  a.BaseInfo.LastName,
+				Phone:     a.BaseInfo.Phone,
+				Address:   a.BaseInfo.Address,
+			},
 		})
 	}
 
-	return accounts, nil
+	return sellers, nil
 }

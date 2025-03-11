@@ -2,11 +2,16 @@ package account
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	_ "github.com/lib/pq"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+)
+
+var (
+	ErrNotFound = errors.New("account not found")
 )
 
 type Repository interface {
@@ -17,8 +22,11 @@ type Repository interface {
 	UpdateAccountSeller(ctx context.Context, a Seller) error
 	UpdateAccountBuyer(ctx context.Context, a Buyer) error
 
-	GetAccountByID(ctx context.Context, id string) (*Account, error)
-	ListAccounts(ctx context.Context, skip uint64, take uint64) ([]Account, error)
+	GetSellerByID(ctx context.Context, id string) (*Seller, error)
+	GetBuyerByID(ctx context.Context, id string) (*Buyer, error)
+
+	ListAccountSellers(ctx context.Context, skip uint64, take uint64) ([]Seller, error)
+	ListAccountSellersByID(ctx context.Context, ids []string) ([]Seller, error)
 }
 
 type postgresRepository struct {
@@ -88,42 +96,55 @@ func (r *postgresRepository) UpdateAccountBuyer(ctx context.Context, a Buyer) er
 	return nil
 }
 
-func (r *postgresRepository) GetAccountByID(ctx context.Context, id string) (*Account, error) {
-	// row := r.db.QueryRowContext(ctx, "SELECT id, name FROM accounts WHERE id = $1", id)
-	// if row == nil {
-	// 	return nil, errors.New("account does not exist")
-	// }
+func (r *postgresRepository) GetSellerByID(ctx context.Context, id string) (*Seller, error) {
 
-	// a := &Account{}
-	// if err := row.Scan(&a.ID, &a.Name); err != nil {
-	// 	return nil, err
-	// }
-	return nil, nil
+	var seller = Seller{ID: id}
+	result := r.db.WithContext(ctx).First(&seller)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, result.Error
+	}
+
+	return &seller, nil
 }
 
-func (r *postgresRepository) ListAccounts(ctx context.Context, skip uint64, take uint64) ([]Account, error) {
-	// rows, err := r.db.QueryContext(
-	// 	ctx,
-	// 	"SELECT id, name FROM accounts ORDER BY id DESC OFFSET $1 LIMIT $2",
-	// 	skip,
-	// 	take,
-	// )
+func (r *postgresRepository) GetBuyerByID(ctx context.Context, id string) (*Buyer, error) {
+	var buyer = Buyer{ID: id}
+	result := r.db.WithContext(ctx).First(&buyer)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, result.Error
+	}
 
-	// if err != nil {
-	// 	return nil, err
-	// }
+	return &buyer, nil
+}
 
-	// defer rows.Close()
-	// accounts := []Account{}
-	// for rows.Next() {
-	// 	a := &Account{}
-	// 	if err := rows.Scan(&a.ID, &a.Name); err != nil {
-	// 		accounts = append(accounts, *a)
-	// 	}
-	// }
+func (r *postgresRepository) ListAccountSellers(ctx context.Context, skip uint64, take uint64) ([]Seller, error) {
+	var sellers = []Seller{}
+	result := r.db.WithContext(ctx).Limit(int(take)).Offset(int(skip)).Find(&sellers)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, result.Error
+	}
 
-	// if err = rows.Err(); err != nil {
-	// 	return nil, err
-	// }
-	return nil, nil
+	return sellers, nil
+}
+
+func (r *postgresRepository) ListAccountSellersByID(ctx context.Context, ids []string) ([]Seller, error) {
+	var sellers = []Seller{}
+	result := r.db.WithContext(ctx).Where("(id) IN (?)", ids).Find(&sellers)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, result.Error
+	}
+
+	return sellers, nil
 }

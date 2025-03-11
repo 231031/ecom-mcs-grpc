@@ -127,18 +127,45 @@ func (s *grpcServer) UpdateAccountSeller(ctx context.Context, a *pb.AccountSelle
 	return a, nil
 }
 
-func (s *grpcServer) GetAccount(ctx context.Context, r *pb.GetAccountBuyerRequest) (*pb.GetAccountBuyerResponse, error) {
-	a, err := s.service.GetAccountBuyer(ctx, r.Id)
+func (s *grpcServer) GetAccountBuyer(ctx context.Context, r *pb.GetAccountRequest) (*pb.AccountBuyer, error) {
+	a, err := s.service.GetAccountBuyerByID(ctx, r.Id)
 	if err != nil {
 		return nil, err
 	}
-	return &pb.GetAccountBuyerResponse{Account: &pb.AccountBuyer{
+
+	return &pb.AccountBuyer{
 		Id: a.ID,
-	}}, nil
+		BaseInfo: &pb.BaseInfo{
+			Email:     a.Email,
+			FirstName: a.FirstName,
+			LastName:  a.LastName,
+			Phone:     a.Phone,
+			Address:   a.Address,
+		},
+	}, nil
 }
 
-func (s *grpcServer) GetAccounts(ctx context.Context, r *pb.GetAccountsSellerRequest) (*pb.GetAccountsSellerResponse, error) {
-	a, err := s.service.GetAccounts(ctx, r.Skip, r.Take)
+func (s *grpcServer) GetAccountSeller(ctx context.Context, r *pb.GetAccountRequest) (*pb.AccountSeller, error) {
+	a, err := s.service.GetAccountSellerByID(ctx, r.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.AccountSeller{
+		Id:        a.ID,
+		StoreName: a.StoreName,
+		BaseInfo: &pb.BaseInfo{
+			Email:     a.Email,
+			FirstName: a.FirstName,
+			LastName:  a.LastName,
+			Phone:     a.Phone,
+			Address:   a.Address,
+		},
+	}, nil
+}
+
+func (s *grpcServer) GetAccountSellers(ctx context.Context, r *pb.GetAccountSellersRequest) (*pb.GetAccountSellersResponse, error) {
+	a, err := s.service.GetAccountSellers(ctx, r.Ids, r.Skip, r.Take)
 	if err != nil {
 		return nil, err
 	}
@@ -147,8 +174,18 @@ func (s *grpcServer) GetAccounts(ctx context.Context, r *pb.GetAccountsSellerReq
 	for _, p := range a {
 		accounts = append(
 			accounts,
-			&pb.AccountSeller{Id: p.ID},
+			&pb.AccountSeller{
+				Id:        p.ID,
+				StoreName: p.StoreName,
+				BaseInfo: &pb.BaseInfo{
+					Email:     p.Email,
+					FirstName: p.FirstName,
+					LastName:  p.LastName,
+					Phone:     p.Phone,
+					Address:   p.Address,
+				},
+			},
 		)
 	}
-	return &pb.GetAccountsSellerResponse{Accounts: accounts}, nil
+	return &pb.GetAccountSellersResponse{Accounts: accounts}, nil
 }

@@ -58,7 +58,7 @@ func ListenGRPC(s Service, accountURL, catalogURL string, port int) error {
 }
 
 func (s *grpcServer) PostOrder(ctx context.Context, r *pb.PostOrderRequest) (*pb.PostOrderResponse, error) {
-	_, err := s.accountClient.GetAccount(ctx, r.AccountId)
+	_, err := s.accountClient.GetAccountBuyerByID(ctx, r.AccountId)
 	if err != nil {
 		log.Println("error getting account", err)
 		return nil, ErrInvalidAccount
@@ -148,7 +148,7 @@ func (s *grpcServer) PostOrder(ctx context.Context, r *pb.PostOrderRequest) (*pb
 }
 
 func (s *grpcServer) GetOrdersForAccount(ctx context.Context, r *pb.GetOrderForAccountRequest) (*pb.GetOrderForAccountResponse, error) {
-	_, err := s.accountClient.GetAccount(ctx, r.AccountId)
+	_, err := s.accountClient.GetAccountBuyerByID(ctx, r.AccountId)
 	if err != nil {
 		log.Println("error getting account", err)
 		return nil, ErrInvalidAccount

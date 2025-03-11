@@ -110,7 +110,8 @@ type ComplexityRoot struct {
 		Buyer    func(childComplexity int, id string) int
 		Orders   func(childComplexity int, id *string) int
 		Products func(childComplexity int, pagination *PaginationInput, query *string, id *string) int
-		Sellers  func(childComplexity int, pagination *PaginationInput, id *string) int
+		Seller   func(childComplexity int, id string) int
+		Sellers  func(childComplexity int, pagination *PaginationInput, id []string) int
 	}
 }
 
@@ -128,7 +129,8 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	Buyer(ctx context.Context, id string) (*AccountBuyer, error)
-	Sellers(ctx context.Context, pagination *PaginationInput, id *string) ([]*AccountSeller, error)
+	Seller(ctx context.Context, id string) (*AccountSeller, error)
+	Sellers(ctx context.Context, pagination *PaginationInput, id []string) ([]*AccountSeller, error)
 	Products(ctx context.Context, pagination *PaginationInput, query *string, id *string) ([]*Product, error)
 	Orders(ctx context.Context, id *string) ([]*Order, error)
 }
@@ -525,6 +527,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Products(childComplexity, args["pagination"].(*PaginationInput), args["query"].(*string), args["id"].(*string)), true
 
+	case "Query.seller":
+		if e.complexity.Query.Seller == nil {
+			break
+		}
+
+		args, err := ec.field_Query_seller_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Seller(childComplexity, args["id"].(string)), true
+
 	case "Query.sellers":
 		if e.complexity.Query.Sellers == nil {
 			break
@@ -535,7 +549,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Sellers(childComplexity, args["pagination"].(*PaginationInput), args["id"].(*string)), true
+		return e.complexity.Query.Sellers(childComplexity, args["pagination"].(*PaginationInput), args["id"].([]string)), true
 
 	}
 	return 0, false
@@ -1221,6 +1235,34 @@ func (ec *executionContext) field_Query_products_argsID(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Query_seller_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_seller_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Query_seller_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Query_sellers_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1257,18 +1299,18 @@ func (ec *executionContext) field_Query_sellers_argsPagination(
 func (ec *executionContext) field_Query_sellers_argsID(
 	ctx context.Context,
 	rawArgs map[string]any,
-) (*string, error) {
+) ([]string, error) {
 	if _, ok := rawArgs["id"]; !ok {
-		var zeroVal *string
+		var zeroVal []string
 		return zeroVal, nil
 	}
 
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 	if tmp, ok := rawArgs["id"]; ok {
-		return ec.unmarshalOString2ᚖstring(ctx, tmp)
+		return ec.unmarshalOString2ᚕstringᚄ(ctx, tmp)
 	}
 
-	var zeroVal *string
+	var zeroVal []string
 	return zeroVal, nil
 }
 
@@ -3557,6 +3599,81 @@ func (ec *executionContext) fieldContext_Query_buyer(ctx context.Context, field 
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_seller(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_seller(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Seller(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*AccountSeller)
+	fc.Result = res
+	return ec.marshalNAccountSeller2ᚖgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐAccountSeller(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_seller(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "token":
+				return ec.fieldContext_AccountSeller_token(ctx, field)
+			case "store_name":
+				return ec.fieldContext_AccountSeller_store_name(ctx, field)
+			case "products":
+				return ec.fieldContext_AccountSeller_products(ctx, field)
+			case "id":
+				return ec.fieldContext_AccountSeller_id(ctx, field)
+			case "email":
+				return ec.fieldContext_AccountSeller_email(ctx, field)
+			case "first_name":
+				return ec.fieldContext_AccountSeller_first_name(ctx, field)
+			case "last_name":
+				return ec.fieldContext_AccountSeller_last_name(ctx, field)
+			case "phone":
+				return ec.fieldContext_AccountSeller_phone(ctx, field)
+			case "address":
+				return ec.fieldContext_AccountSeller_address(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AccountSeller", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_seller_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_sellers(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_sellers(ctx, field)
 	if err != nil {
@@ -3571,7 +3688,7 @@ func (ec *executionContext) _Query_sellers(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Sellers(rctx, fc.Args["pagination"].(*PaginationInput), fc.Args["id"].(*string))
+		return ec.resolvers.Query().Sellers(rctx, fc.Args["pagination"].(*PaginationInput), fc.Args["id"].([]string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6672,6 +6789,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "seller":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_seller(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "sellers":
 			field := field
 
@@ -7773,6 +7912,44 @@ func (ec *executionContext) unmarshalOPaginationInput2ᚖgithubᚗcomᚋ231031�
 	}
 	res, err := ec.unmarshalInputPaginationInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {

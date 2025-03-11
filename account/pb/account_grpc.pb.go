@@ -24,7 +24,8 @@ const (
 	AccountService_UpdateAccountSeller_FullMethodName = "/proto.AccountService/UpdateAccountSeller"
 	AccountService_UpdateAccountBuyer_FullMethodName  = "/proto.AccountService/UpdateAccountBuyer"
 	AccountService_GetAccountBuyer_FullMethodName     = "/proto.AccountService/GetAccountBuyer"
-	AccountService_GetAccountsSeller_FullMethodName   = "/proto.AccountService/GetAccountsSeller"
+	AccountService_GetAccountSeller_FullMethodName    = "/proto.AccountService/GetAccountSeller"
+	AccountService_GetAccountSellers_FullMethodName   = "/proto.AccountService/GetAccountSellers"
 	AccountService_LoginAccount_FullMethodName        = "/proto.AccountService/LoginAccount"
 )
 
@@ -36,8 +37,9 @@ type AccountServiceClient interface {
 	PostAccountSeller(ctx context.Context, in *PostAccountSellerRequest, opts ...grpc.CallOption) (*PostAccountSellerResponse, error)
 	UpdateAccountSeller(ctx context.Context, in *AccountSeller, opts ...grpc.CallOption) (*AccountSeller, error)
 	UpdateAccountBuyer(ctx context.Context, in *AccountBuyer, opts ...grpc.CallOption) (*AccountBuyer, error)
-	GetAccountBuyer(ctx context.Context, in *GetAccountBuyerRequest, opts ...grpc.CallOption) (*AccountBuyer, error)
-	GetAccountsSeller(ctx context.Context, in *GetAccountsSellerRequest, opts ...grpc.CallOption) (*GetAccountsSellerResponse, error)
+	GetAccountBuyer(ctx context.Context, in *GetAccountRequest, opts ...grpc.CallOption) (*AccountBuyer, error)
+	GetAccountSeller(ctx context.Context, in *GetAccountRequest, opts ...grpc.CallOption) (*AccountSeller, error)
+	GetAccountSellers(ctx context.Context, in *GetAccountSellersRequest, opts ...grpc.CallOption) (*GetAccountSellersResponse, error)
 	LoginAccount(ctx context.Context, in *LoginAccountRequest, opts ...grpc.CallOption) (*LoginAccountResponse, error)
 }
 
@@ -89,7 +91,7 @@ func (c *accountServiceClient) UpdateAccountBuyer(ctx context.Context, in *Accou
 	return out, nil
 }
 
-func (c *accountServiceClient) GetAccountBuyer(ctx context.Context, in *GetAccountBuyerRequest, opts ...grpc.CallOption) (*AccountBuyer, error) {
+func (c *accountServiceClient) GetAccountBuyer(ctx context.Context, in *GetAccountRequest, opts ...grpc.CallOption) (*AccountBuyer, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AccountBuyer)
 	err := c.cc.Invoke(ctx, AccountService_GetAccountBuyer_FullMethodName, in, out, cOpts...)
@@ -99,10 +101,20 @@ func (c *accountServiceClient) GetAccountBuyer(ctx context.Context, in *GetAccou
 	return out, nil
 }
 
-func (c *accountServiceClient) GetAccountsSeller(ctx context.Context, in *GetAccountsSellerRequest, opts ...grpc.CallOption) (*GetAccountsSellerResponse, error) {
+func (c *accountServiceClient) GetAccountSeller(ctx context.Context, in *GetAccountRequest, opts ...grpc.CallOption) (*AccountSeller, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetAccountsSellerResponse)
-	err := c.cc.Invoke(ctx, AccountService_GetAccountsSeller_FullMethodName, in, out, cOpts...)
+	out := new(AccountSeller)
+	err := c.cc.Invoke(ctx, AccountService_GetAccountSeller_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) GetAccountSellers(ctx context.Context, in *GetAccountSellersRequest, opts ...grpc.CallOption) (*GetAccountSellersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAccountSellersResponse)
+	err := c.cc.Invoke(ctx, AccountService_GetAccountSellers_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -127,8 +139,9 @@ type AccountServiceServer interface {
 	PostAccountSeller(context.Context, *PostAccountSellerRequest) (*PostAccountSellerResponse, error)
 	UpdateAccountSeller(context.Context, *AccountSeller) (*AccountSeller, error)
 	UpdateAccountBuyer(context.Context, *AccountBuyer) (*AccountBuyer, error)
-	GetAccountBuyer(context.Context, *GetAccountBuyerRequest) (*AccountBuyer, error)
-	GetAccountsSeller(context.Context, *GetAccountsSellerRequest) (*GetAccountsSellerResponse, error)
+	GetAccountBuyer(context.Context, *GetAccountRequest) (*AccountBuyer, error)
+	GetAccountSeller(context.Context, *GetAccountRequest) (*AccountSeller, error)
+	GetAccountSellers(context.Context, *GetAccountSellersRequest) (*GetAccountSellersResponse, error)
 	LoginAccount(context.Context, *LoginAccountRequest) (*LoginAccountResponse, error)
 	mustEmbedUnimplementedAccountServiceServer()
 }
@@ -152,11 +165,14 @@ func (UnimplementedAccountServiceServer) UpdateAccountSeller(context.Context, *A
 func (UnimplementedAccountServiceServer) UpdateAccountBuyer(context.Context, *AccountBuyer) (*AccountBuyer, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateAccountBuyer not implemented")
 }
-func (UnimplementedAccountServiceServer) GetAccountBuyer(context.Context, *GetAccountBuyerRequest) (*AccountBuyer, error) {
+func (UnimplementedAccountServiceServer) GetAccountBuyer(context.Context, *GetAccountRequest) (*AccountBuyer, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAccountBuyer not implemented")
 }
-func (UnimplementedAccountServiceServer) GetAccountsSeller(context.Context, *GetAccountsSellerRequest) (*GetAccountsSellerResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAccountsSeller not implemented")
+func (UnimplementedAccountServiceServer) GetAccountSeller(context.Context, *GetAccountRequest) (*AccountSeller, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAccountSeller not implemented")
+}
+func (UnimplementedAccountServiceServer) GetAccountSellers(context.Context, *GetAccountSellersRequest) (*GetAccountSellersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAccountSellers not implemented")
 }
 func (UnimplementedAccountServiceServer) LoginAccount(context.Context, *LoginAccountRequest) (*LoginAccountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginAccount not implemented")
@@ -255,7 +271,7 @@ func _AccountService_UpdateAccountBuyer_Handler(srv interface{}, ctx context.Con
 }
 
 func _AccountService_GetAccountBuyer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetAccountBuyerRequest)
+	in := new(GetAccountRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -267,25 +283,43 @@ func _AccountService_GetAccountBuyer_Handler(srv interface{}, ctx context.Contex
 		FullMethod: AccountService_GetAccountBuyer_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AccountServiceServer).GetAccountBuyer(ctx, req.(*GetAccountBuyerRequest))
+		return srv.(AccountServiceServer).GetAccountBuyer(ctx, req.(*GetAccountRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AccountService_GetAccountsSeller_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetAccountsSellerRequest)
+func _AccountService_GetAccountSeller_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAccountRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AccountServiceServer).GetAccountsSeller(ctx, in)
+		return srv.(AccountServiceServer).GetAccountSeller(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AccountService_GetAccountsSeller_FullMethodName,
+		FullMethod: AccountService_GetAccountSeller_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AccountServiceServer).GetAccountsSeller(ctx, req.(*GetAccountsSellerRequest))
+		return srv.(AccountServiceServer).GetAccountSeller(ctx, req.(*GetAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_GetAccountSellers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAccountSellersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).GetAccountSellers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_GetAccountSellers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).GetAccountSellers(ctx, req.(*GetAccountSellersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -336,8 +370,12 @@ var AccountService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AccountService_GetAccountBuyer_Handler,
 		},
 		{
-			MethodName: "GetAccountsSeller",
-			Handler:    _AccountService_GetAccountsSeller_Handler,
+			MethodName: "GetAccountSeller",
+			Handler:    _AccountService_GetAccountSeller_Handler,
+		},
+		{
+			MethodName: "GetAccountSellers",
+			Handler:    _AccountService_GetAccountSellers_Handler,
 		},
 		{
 			MethodName: "LoginAccount",

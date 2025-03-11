@@ -127,7 +127,8 @@ type Mutation {
 
 type Query {
     buyer(id: String!): AccountBuyer!
-    sellers(pagination: PaginationInput, id: String): [AccountSeller!]!
+    seller(id: String!): AccountSeller!
+    sellers(pagination: PaginationInput, id:[String!]): [AccountSeller!]!
     products(pagination: PaginationInput, query: String, id: String): [Product!]!
     orders(id: String): [Order!]!
 }

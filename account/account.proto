@@ -52,21 +52,21 @@ message LoginAccountResponse {
     AccountSeller seller = 3;
 }
 
-message GetAccountBuyerRequest {
+message GetAccountRequest {
     string id = 1;
 }
 
-message GetAccountBuyerResponse {
-    AccountBuyer account = 1;
+message GetAccountSellerResponse {
+    AccountSeller account = 1;
 }
 
-message GetAccountsSellerRequest {
+message GetAccountSellersRequest {
     uint64 skip = 1;
     uint64 take = 2;
     repeated string ids = 3;
 }
 
-message GetAccountsSellerResponse {
+message GetAccountSellersResponse {
     repeated AccountSeller accounts = 1;
 }
 
@@ -77,8 +77,10 @@ service AccountService {
     rpc UpdateAccountSeller (AccountSeller) returns (AccountSeller) {}
     rpc UpdateAccountBuyer (AccountBuyer) returns (AccountBuyer) {}
 
-    rpc GetAccountBuyer (GetAccountBuyerRequest) returns (AccountBuyer) {}
-    rpc GetAccountsSeller (GetAccountsSellerRequest) returns (GetAccountsSellerResponse) {}
+    rpc GetAccountBuyer (GetAccountRequest) returns (AccountBuyer) {}
+    rpc GetAccountSeller (GetAccountRequest) returns (AccountSeller) {}
+
+    rpc GetAccountSellers (GetAccountSellersRequest) returns (GetAccountSellersResponse) {}
 
     rpc LoginAccount (LoginAccountRequest) returns (LoginAccountResponse) {}
 }
