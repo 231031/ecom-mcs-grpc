@@ -8,12 +8,13 @@ import (
 )
 
 type Service interface {
-	PostProduct(ctx context.Context, name, description string, price float64, quantity uint32) (*Product, error)
+	PostProduct(ctx context.Context, name, description, seller_id string, price float64, quantity uint32) (*Product, error)
 	GetProduct(ctx context.Context, id string) (*Product, error)
 	GetProducts(ctx context.Context, skip uint64, take uint64) ([]Product, error)
 	GetProductByIDs(ctx context.Context, ids []string) ([]Product, error)
 	SearchProducts(ctx context.Context, query string, skip uint64, take uint64) ([]Product, error)
 	UpdateQuantity(ctx context.Context, ids []string, quantity []uint32) ([]string, error)
+	UpdateProduct(ctx context.Context, p Product) (*Product, error)
 }
 
 type catalogService struct {
@@ -23,13 +24,14 @@ type catalogService struct {
 func NewService(r Repository) Service {
 	return &catalogService{repository: r}
 }
-func (s *catalogService) PostProduct(ctx context.Context, name, description string, price float64, quantity uint32) (*Product, error) {
+func (s *catalogService) PostProduct(ctx context.Context, name, description, seller_id string, price float64, quantity uint32) (*Product, error) {
 	p := &Product{
 		Name:        name,
 		Description: description,
 		Price:       price,
 		ID:          ksuid.New().String(),
 		Quantity:    quantity,
+		SellerID:    seller_id,
 	}
 
 	if err := s.repository.PutProduct(ctx, *p); err != nil {
@@ -69,4 +71,16 @@ func (s *catalogService) UpdateQuantity(ctx context.Context, ids []string, quant
 		return nil, err
 	}
 	return ids, nil
+}
+func (s *catalogService) UpdateProduct(ctx context.Context, p Product) (*Product, error) {
+	mappedP, err := convertProductToMap(p)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.repository.UpdateProduct(ctx, mappedP)
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
 }

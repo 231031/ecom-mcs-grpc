@@ -29,6 +29,7 @@ type Repository interface {
 	ListProductsWithIDs(ctx context.Context, ids []string) ([]Product, error)
 	SearchProducts(ctx context.Context, query string, skip uint64, take uint64) ([]Product, error)
 	UpdateQuantity(ctx context.Context, ids []string, quantity []uint32) error
+	UpdateProduct(ctx context.Context, p map[string]interface{}) error
 }
 
 type elasticRepository struct {
@@ -69,6 +70,7 @@ func (r *elasticRepository) PutProduct(ctx context.Context, p Product) error {
 		Description: p.Description,
 		Price:       p.Price,
 		Quantity:    p.Quantity,
+		SellerID:    p.SellerID,
 	}
 	productJson, err := json.Marshal(product)
 	if err != nil {
@@ -233,6 +235,41 @@ func (r *elasticRepository) UpdateQuantity(ctx context.Context, ids []string, qu
 		builder.WriteString(fmt.Sprintf(`{ "update": { "_index": "products", "_id": "%s" } }%s`, ids[i], "\n"))
 		builder.WriteString(fmt.Sprintf(`{ "doc" : {"quantity" : "%s"} }%s`, strconv.Itoa(int(quantity[i])), "\n"))
 	}
+	body := builder.String()
+	body += "\n"
+
+	if body != "" {
+		resp, err := r.client.Bulk(bytes.NewReader([]byte(body)))
+		if err != nil {
+			return err
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			log.Println(resp.String())
+		}
+		return nil
+	}
+
+	return nil
+}
+
+func (r *elasticRepository) UpdateProduct(ctx context.Context, p map[string]interface{}) error {
+	var builder strings.Builder
+	builder.WriteString(fmt.Sprintf(`{ "update": { "_index": "products", "_id": "%s" } }%s`, p["ID"], "\n"))
+
+	builder.WriteString(`{ "doc" : {`)
+	first := true
+	for k, v := range p {
+		if k != "ID" && v != "" {
+			if !first {
+				builder.WriteString(", ")
+			}
+			builder.WriteString(fmt.Sprintf(`"%s" : "%s"`, k, v))
+			first = false
+		}
+	}
+	builder.WriteString(`} }` + "\n")
+
 	body := builder.String()
 	body += "\n"
 

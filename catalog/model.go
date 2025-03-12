@@ -23,6 +23,7 @@ type productDocument struct {
 	Description string  `json:"description"`
 	Price       float64 `json:"price"`
 	Quantity    uint32  `json:"quantity"`
+	SellerID    string  `json:"seller_id"`
 }
 
 type Product struct {
@@ -31,4 +32,5 @@ type Product struct {
 	Description string  `json:"description"`
 	Price       float64 `json:"price"`
 	Quantity    uint32  `json:"quantity"`
+	SellerID    string  `json:"seller_id"`
 }

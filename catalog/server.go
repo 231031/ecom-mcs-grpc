@@ -5,26 +5,36 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/231031/ecom-mcs-grpc/account"
 	"github.com/231031/ecom-mcs-grpc/catalog/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
 type grpcServer struct {
-	service Service
+	service       Service
+	accountClient *account.Client
 	pb.UnimplementedCatalogServiceServer
 }
 
-func ListenGRPC(s Service, port int) error {
+func ListenGRPC(s Service, port int, accountURL string) error {
+	accountClient, err := account.NewClient(accountURL)
+	if err != nil {
+		return err
+	}
+
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
+		accountClient.Close()
 		return err
 	}
 
 	serve := grpc.NewServer()
 	grpcServiceServer := &grpcServer{
-		service: s,
+		service:       s,
+		accountClient: accountClient,
 	}
+
 	// register server with pb
 	pb.RegisterCatalogServiceServer(serve, grpcServiceServer)
 	reflection.Register(serve)
@@ -32,7 +42,12 @@ func ListenGRPC(s Service, port int) error {
 }
 
 func (s *grpcServer) PostProduct(ctx context.Context, r *pb.PostProductRequest) (*pb.PostProductResponse, error) {
-	p, err := s.service.PostProduct(ctx, r.Name, r.Description, r.Price, r.Quantity)
+	_, err := s.accountClient.GetAccountSellerByID(ctx, r.SellerId)
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := s.service.PostProduct(ctx, r.Name, r.Description, r.SellerId, r.Price, r.Quantity)
 	if err != nil {
 		return nil, err
 	}
@@ -44,6 +59,7 @@ func (s *grpcServer) PostProduct(ctx context.Context, r *pb.PostProductRequest) 
 			Description: p.Description,
 			Price:       p.Price,
 			Quantity:    p.Quantity,
+			SellerId:    p.SellerID,
 		},
 	}, nil
 
@@ -61,6 +77,7 @@ func (s *grpcServer) GetProduct(ctx context.Context, r *pb.GetProductRequest) (*
 			Description: p.Description,
 			Price:       p.Price,
 			Quantity:    p.Quantity,
+			SellerId:    p.SellerID,
 		},
 	}, nil
 }
@@ -104,4 +121,21 @@ func (s *grpcServer) UpdateQuantity(ctx context.Context, req *pb.UpdateQuantityR
 		Ids: ids,
 	}
 	return idsResp, nil
+}
+
+func (s *grpcServer) UpdateProduct(ctx context.Context, req *pb.Product) (*pb.Product, error) {
+	p := Product{
+		ID:          req.Id,
+		Name:        req.Name,
+		Price:       req.Price,
+		Description: req.Description,
+		Quantity:    req.Quantity,
+	}
+
+	_, err := s.service.UpdateProduct(ctx, p)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }

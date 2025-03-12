@@ -68,7 +68,7 @@ func (r *queryResolver) Sellers(ctx context.Context, pagination *PaginationInput
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	if ids != nil {
+	if ids != nil || pagination != nil {
 		skip := uint64(0)
 		take := uint64(0)
 
@@ -86,6 +86,7 @@ func (r *queryResolver) Sellers(ctx context.Context, pagination *PaginationInput
 		var sellers = []*AccountSeller{}
 		for _, a := range accounts {
 			sellers = append(sellers, &AccountSeller{
+				StoreName: a.StoreName,
 				ID:        a.ID,
 				Email:     a.Email,
 				FirstName: a.FirstName,
@@ -95,7 +96,6 @@ func (r *queryResolver) Sellers(ctx context.Context, pagination *PaginationInput
 			})
 		}
 		return sellers, nil
-	} else {
 	}
 
 	return nil, ErrInvalidID

@@ -168,17 +168,19 @@ func (m *mutationResolver) CreateProduct(ctx context.Context, in ProductInput) (
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	p, err := m.server.catalogClient.PostProduct(ctx, in.Name, in.Description, in.Price, uint32(in.Quantity))
+	p, err := m.server.catalogClient.PostProduct(ctx, in.Name, in.Description, in.SellerID, in.Price, uint32(in.Quantity))
 	if err != nil {
 		return nil, err
 	}
 
+	log.Println(p.SellerID)
 	return &Product{
 		ID:          p.ID,
 		Name:        in.Name,
 		Description: in.Description,
 		Price:       in.Price,
 		Quantity:    in.Quantity,
+		SellerID:    p.SellerID,
 	}, nil
 }
 
@@ -186,13 +188,14 @@ func (m *mutationResolver) UpdateProduct(ctx context.Context, in ProductInput, i
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	p, err := m.server.catalogClient.PostProduct(ctx, in.Name, in.Description, in.Price, uint32(in.Quantity))
+	// edit function update product
+	_, err := m.server.catalogClient.UpdateProduct(ctx, id, in.Name, in.Description, in.Price, uint32(in.Quantity))
 	if err != nil {
 		return nil, err
 	}
 
 	return &Product{
-		ID:          p.ID,
+		ID:          id,
 		Name:        in.Name,
 		Description: in.Description,
 		Price:       in.Price,

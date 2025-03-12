@@ -28,7 +28,9 @@ services:
       - ./.env
     environment:
       - DATABASE_URL=http://catalog_elastic:${ELASTIC_PORT}
+      - ACCOUNT_SERVICE_URL=account:${ACCOUNT_PORT}
     volumes:
+      - ./account:/go/src/app/account
       - ./catalog:/go/src/app/catalog
       - ./go.mod:/go/src/app/go.mod
       - ./go.sum:/go/src/app/go.sum

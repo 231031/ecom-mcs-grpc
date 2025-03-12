@@ -31,12 +31,13 @@ func (c *Client) Close() {
 	c.conn.Close()
 }
 
-func (c *Client) PostProduct(ctx context.Context, name, description string, price float64, quantity uint32) (*Product, error) {
+func (c *Client) PostProduct(ctx context.Context, name, description, seller_id string, price float64, quantity uint32) (*Product, error) {
 	r, err := c.service.PostProduct(ctx, &pb.PostProductRequest{
 		Name:        name,
 		Description: description,
 		Price:       price,
 		Quantity:    quantity,
+		SellerId:    seller_id,
 	})
 	if err != nil {
 		return nil, err
@@ -48,6 +49,7 @@ func (c *Client) PostProduct(ctx context.Context, name, description string, pric
 		Description: r.Product.Description,
 		Price:       r.Product.Price,
 		Quantity:    r.Product.Quantity,
+		SellerID:    r.Product.SellerId,
 	}, nil
 }
 
@@ -115,4 +117,23 @@ func (c *Client) UpdateQuantity(ctx context.Context, ids []string, quantity []ui
 	return resp.Ids, nil
 }
 
-func (c *Client) UpdateProduct(ctx context.Context, product Product) {}
+func (c *Client) UpdateProduct(ctx context.Context, id, name, description string, price float64, quantity uint32) (*Product, error) {
+	p, err := c.service.UpdateProduct(ctx, &pb.Product{
+		Id:          id,
+		Name:        name,
+		Price:       price,
+		Description: description,
+		Quantity:    quantity,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &Product{
+		ID:          p.Id,
+		Name:        p.Name,
+		Description: p.Description,
+		Price:       p.Price,
+		Quantity:    p.Quantity,
+	}, nil
+}

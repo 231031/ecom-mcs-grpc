@@ -9,6 +9,7 @@ message Product {
     string description = 3;
     double price = 4;
     uint32 quantity = 5;
+    string seller_id = 6;
 }
 
 message PostProductRequest {
@@ -16,6 +17,7 @@ message PostProductRequest {
     string description = 2;
     double price = 3;
     uint32 quantity = 4;
+    string seller_id = 5;
 }
 
 message PostProductResponse {
@@ -60,8 +62,10 @@ message UpdateQuantityResponse {
 
 service CatalogService {
     rpc PostProduct (PostProductRequest) returns (PostProductResponse) {}
+
     rpc GetProduct (GetProductRequest) returns (GetProductResponse) {}
     rpc GetProducts (GetProductsRequest) returns (GetProductsResponse) {}
-    rpc UpdateProduct (UpdateProductRequest) returns (UpdateProductResponse) {}
+
+    rpc UpdateProduct (Product) returns (Product) {}
     rpc UpdateQuantity (UpdateQuantityRequest) returns (UpdateQuantityResponse) {}
 }

@@ -13,6 +13,7 @@ type Config struct {
 	DatabaseURl     string `envconfig:"DATABASE_URL"`
 	ElasticUsername string `envconfig:"ELASTIC_USERNAME"`
 	ElasticPassword string `envconfig:"ELASTIC_PASSWORD"`
+	AccountURL      string `envconfig:"ACCOUNT_SERVICE_URL"`
 }
 
 func main() {
@@ -35,5 +36,5 @@ func main() {
 	log.Println("Listening on port")
 
 	s := catalog.NewService(r)
-	log.Fatal(catalog.ListenGRPC(s, 50002))
+	log.Fatal(catalog.ListenGRPC(s, 50002, cfg.AccountURL))
 }

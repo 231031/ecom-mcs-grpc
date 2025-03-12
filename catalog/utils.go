@@ -42,3 +42,20 @@ func createQueryCheck(p Product) string {
 	priceProduct := strconv.FormatFloat(p.Price, 'f', -1, 64)
 	return fmt.Sprintf("name:%s AND price:%s AND description:%s", p.Name, priceProduct, p.Description)
 }
+
+func convertProductToMap(p Product) (map[string]interface{}, error) {
+	// Marshall the Product struct to JSON
+	productJSON, err := json.Marshal(p)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal the JSON into a map
+	var result map[string]interface{}
+	err = json.Unmarshal(productJSON, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
