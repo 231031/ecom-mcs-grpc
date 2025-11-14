@@ -59,6 +59,23 @@ services:
     restart: on-failure
     networks:
       - ecom_networks
+  authentication:
+    container_name: ecom_authentication
+    build:
+      context: .
+      dockerfile: ./authentication/app.Dockerfile 
+    depends_on:
+      - authentication_db
+    env_file:
+      - ./.env
+    environment:
+      - DATABASE_URL=postgres://${AUTH_POST_USER}:${AUTH_POST_PASSWORD}@authentication_db/${AUTH_POST_DB}?sslmode=disable
+    volumes:
+      - ./go.mod:/go/src/app/go.mod
+      - ./go.sum:/go/src/app/go.sum
+    restart: on-failure
+    networks:
+      - ecom_networks
   graphql:
     container_name: ecom_graphql
     build: 
@@ -70,17 +87,20 @@ services:
       - account
       - catalog
       - order
+      - authentication
     env_file:
       - ./.env
     environment:
       - ACCOUNT_SERVICE_URL=account:${ACCOUNT_PORT}
       - CATALOG_SERVICE_URL=catalog:${CATALOG_PORT}
       - ORDER_SERVICE_URL=order:${ORDER_PORT}
+      - AUTH_SERVICE_URL=order:${AUTH_PORT}
     volumes:
       - ./graphql:/go/src/app/graphql
       - ./order:/go/src/app/order
       - ./catalog:/go/src/app/catalog
       - ./account:/go/src/app/account
+      - ./authentication:/go/src/app/authentication
       - ./go.mod:/go/src/app/go.mod
       - ./go.sum:/go/src/app/go.sum
     networks:
@@ -117,20 +137,23 @@ services:
       - ecom_networks
     volumes:
       - orders_data:/var/lib/postgresql/data
-  pgadmin:
-    container_name: pgadmin
-    image: dpage/pgadmin4:9
+  authentication_db:
+    container_name: authentication_db
+    build: 
+      context: ./authentication
+      dockerfile: db.Dockerfile
     env_file:
       - ./.env
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=${PG_EMAIL}
-      - PGADMIN_DEFAULT_PASSWORD=${PG_PASSWORD}
-      - PGADMIN_LISTEN_PORT=${PG_PORT}
+    environment: 
+      - POSTGRES_DB=${AUTH_POST_DB}
+      - POSTGRES_USER=${AUTH_POST_USER}
+      - POSTGRES_PASSWORD=${AUTH_POST_PASSWORD}
     restart: on-failure
-    ports:
-      - "${PG_PORT}:${PG_PORT}"
     networks:
       - ecom_networks
+    volumes:
+      - authentications_data:/var/lib/postgresql/data
+
   catalog_elastic:
     container_name: catalog_elastic
     image: docker.elastic.co/elasticsearch/elasticsearch:8.16.3
@@ -173,6 +196,7 @@ services:
 volumes:
   accounts_data:
   orders_data:
+  authentications_data:
   es_data01:
 
 networks:

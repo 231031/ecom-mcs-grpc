@@ -1,0 +1,32 @@
+syntax = "proto3";
+package proto;
+
+option go_package = "./pb";
+
+message CreateUserRequest {
+    string email = 1;
+    string password = 2;
+    int32 role = 3;
+}
+
+message CreateUserResponse {}
+
+message LoginUserRequest {
+    string email = 1;
+    string password = 2;
+}
+
+message TokenResponse {
+    string token = 1;
+    string refresh_token = 2;
+}
+
+message RefreshTokenRequest {
+    string refresh_token = 1;
+}
+
+service AuthenticationService {
+    rpc CreateUser (CreateUserRequest) returns (CreateUserResponse) {}
+    rpc LoginUser (LoginUserRequest) returns (TokenResponse) {}
+    rpc RefreshTokenUser (RefreshTokenRequest) returns (TokenResponse) {}
+}
