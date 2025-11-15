@@ -66,10 +66,12 @@ services:
       dockerfile: ./authentication/app.Dockerfile 
     depends_on:
       - authentication_db
+      - authentication_redis
     env_file:
       - ./.env
     environment:
       - DATABASE_URL=postgres://${AUTH_POST_USER}:${AUTH_POST_PASSWORD}@authentication_db/${AUTH_POST_DB}?sslmode=disable
+      - REDIS_ADDR=authentication_redis:${REDIS_PORT}
     volumes:
       - ./go.mod:/go/src/app/go.mod
       - ./go.sum:/go/src/app/go.sum
@@ -153,7 +155,16 @@ services:
       - ecom_networks
     volumes:
       - authentications_data:/var/lib/postgresql/data
-
+  authentication_redis:
+    container_name: authentication_redis
+    image: redis:7.0.11-alpine
+    env_file:
+      - ./.env
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+    networks:
+      - ecom_networks
   catalog_elastic:
     container_name: catalog_elastic
     image: docker.elastic.co/elasticsearch/elasticsearch:8.16.3

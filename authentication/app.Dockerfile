@@ -1,14 +1,14 @@
-FROM golang:1.23.6-alpine3.21 AS dev
+FROM golang:1.25.3-alpine AS dev
 
 # Set the folder name dynamically (change per microservice)
 ARG FOLDER_NAME
-ENV FOLDER_NAME=authentiction
+ENV FOLDER_NAME=authentication
 
 # Install necessary tools
 RUN apk update && apk add --no-cache git curl
 
 # Install air using Go
-RUN go install github.com/air-verse/air@latest
+RUN go install github.com/air-verse/air@v1.63.0
 
 WORKDIR /go/src/app
 

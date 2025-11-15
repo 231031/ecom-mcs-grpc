@@ -1,9 +1,9 @@
-package authentiction
+package authentication
 
 import (
 	"context"
 
-	"github.com/231031/ecom-mcs-grpc/authentiction/pb"
+	"github.com/231031/ecom-mcs-grpc/authentication/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -28,13 +28,26 @@ func (c *Client) Close() {
 }
 
 func (c *Client) CreateUser(ctx context.Context, in *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
-	return nil, nil
+	u, err := c.service.CreateUser(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
 }
 
 func (c *Client) LoginUser(ctx context.Context, in *pb.LoginUserRequest) (*pb.TokenResponse, error) {
-	return nil, nil
+	token, err := c.service.LoginUser(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return token, nil
 }
 
 func (c *Client) RefreshTokenUser(ctx context.Context, in *pb.RefreshTokenRequest) (*pb.TokenResponse, error) {
-	return nil, nil
+	token, err := c.service.RefreshTokenUser(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return token, nil
 }

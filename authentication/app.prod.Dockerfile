@@ -1,10 +1,10 @@
-FROM golang:1.23.6-alpine3.21 AS build
+FROM golang:1.25.3-alpine AS build
 RUN apk --no-cache add gcc g++ make ca-certificates
 WORKDIR /go/src/app
 COPY go.mod go.sum ./
 COPY vendor vendor
-COPY authentiction authentiction
-RUN GO111MODULE=on go build -mod vendor -o /go/bin/app ./authentiction/cmd/authentiction
+COPY authentication authentication
+RUN GO111MODULE=on go build -mod vendor -o /go/bin/app ./authentication/cmd/authentication
 
 FROM alpine:3.21
 WORKDIR /usr/bin
