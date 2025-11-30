@@ -3,6 +3,7 @@
 package graphql
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strconv"
@@ -46,7 +47,6 @@ func (AccountBuyer) IsLoginResult() {}
 
 type AccountBuyerInput struct {
 	BaseInfo *BaseInfoInput `json:"base_info"`
-	Password string         `json:"password"`
 }
 
 type AccountSeller struct {
@@ -74,15 +74,14 @@ func (AccountSeller) IsLoginResult() {}
 type AccountSellerInput struct {
 	StoreName string         `json:"store_name"`
 	BaseInfo  *BaseInfoInput `json:"base_info"`
-	Password  string         `json:"password"`
 }
 
 type BaseInfoInput struct {
-	Email     string `json:"email"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Phone     string `json:"phone"`
-	Address   string `json:"address"`
+	Email     *string `json:"email,omitempty"`
+	FirstName string  `json:"first_name"`
+	LastName  string  `json:"last_name"`
+	Phone     string  `json:"phone"`
+	Address   string  `json:"address"`
 }
 
 type Mutation struct {
@@ -138,6 +137,11 @@ type ProductInput struct {
 type Query struct {
 }
 
+type RefreshToken struct {
+	Token        string `json:"token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
 type RoleType string
 
 const (
@@ -177,4 +181,18 @@ func (e *RoleType) UnmarshalGQL(v any) error {
 
 func (e RoleType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *RoleType) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e RoleType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }

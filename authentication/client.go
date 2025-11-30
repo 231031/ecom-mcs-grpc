@@ -36,12 +36,12 @@ func (c *Client) CreateUser(ctx context.Context, in *pb.CreateUserRequest) (*pb.
 	return u, nil
 }
 
-func (c *Client) LoginUser(ctx context.Context, in *pb.LoginUserRequest) (*pb.TokenResponse, error) {
-	token, err := c.service.LoginUser(ctx, in)
+func (c *Client) LoginUser(ctx context.Context, in *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
+	u, err := c.service.LoginUser(ctx, in)
 	if err != nil {
 		return nil, err
 	}
-	return token, nil
+	return u, nil
 }
 
 func (c *Client) RefreshTokenUser(ctx context.Context, in *pb.RefreshTokenRequest) (*pb.TokenResponse, error) {

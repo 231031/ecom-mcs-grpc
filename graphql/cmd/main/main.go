@@ -11,9 +11,11 @@ import (
 )
 
 type AppConfig struct {
-	AccountUrl string `envconfig:"ACCOUNT_SERVICE_URL"`
-	OrderUrl   string `envconfig:"ORDER_SERVICE_URL"`
-	CatalogUrl string `envconfig:"CATALOG_SERVICE_URL"`
+	AuthUrl       string `envconfig:"AUTH_SERVICE_URL"`
+	AccountUrl    string `envconfig:"ACCOUNT_SERVICE_URL"`
+	OrderUrl      string `envconfig:"ORDER_SERVICE_URL"`
+	CatalogUrl    string `envconfig:"CATALOG_SERVICE_URL"`
+	PublicKeyPath string `envconfig:"PUBLIC_KEY_PATH"`
 }
 
 func main() {
@@ -23,15 +25,18 @@ func main() {
 		log.Fatal(err)
 	}
 
-	s, err := graphql.NewGraphQLServer(cfg.AccountUrl, cfg.CatalogUrl, cfg.OrderUrl)
+	middleware := graphql.NewAuthMiddleware(cfg.PublicKeyPath)
+	s, err := graphql.NewGraphQLServer(cfg.AuthUrl, cfg.AccountUrl, cfg.CatalogUrl, cfg.OrderUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	h := handler.NewDefaultServer(s.ToExecutablesSchema())
+	srv := s.ToExecutablesSchema(middleware)
+
+	h := handler.NewDefaultServer(srv)
 	p := playground.Handler("GraphQL", "/graphql")
 	http.Handle("/playground", p)
-	http.Handle("/graphql", h)
+	http.Handle("/graphql", graphql.ResponseWriterGetTokenMiddleware(h))
 
 	err = http.ListenAndServe(":8080", nil)
 	if err != nil {

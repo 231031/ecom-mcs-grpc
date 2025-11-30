@@ -8,10 +8,12 @@ import (
 )
 
 type User struct {
-	ID       string `json:"id" gorm:"primaryKey"`
-	Email    string `json:"email" gorm:"uniqueIndex"`
-	Password string `json:"password"`
-	Role     int32  `json:"role"`
+	ID        string    `json:"id" gorm:"primaryKey"`
+	Email     string    `json:"email" gorm:"uniqueIndex"`
+	Password  string    `json:"password"`
+	Role      int32     `json:"role"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime"`
 }
 
 type UserAuth struct {
@@ -20,6 +22,11 @@ type UserAuth struct {
 	Role  int32  `json:"role"`
 }
 
+type UserInfo struct {
+	Email     string        `json:"email"`
+	Role      int32         `json:"role"`
+	TokenPair TokenResponse `json:"token_pair"`
+}
 type TokenResponse struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`

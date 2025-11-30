@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"math/big"
 	"strings"
 
 	"github.com/231031/ecom-mcs-grpc/authentication/model"
@@ -61,20 +60,6 @@ func GenerateSalt(saltLength uint32) ([]byte, error) {
 		return nil, err
 	}
 	return salt, nil
-}
-
-func GenerateDigitOTP() string {
-	const otpLength = 4
-	const digits = "0123456789"
-
-	otp := ""
-	i := 0
-	for i < otpLength {
-		num, _ := rand.Int(rand.Reader, big.NewInt(int64(len(digits))))
-		otp += string(digits[num.Int64()])
-		i++
-	}
-	return otp
 }
 
 func ConfigGenerateKey(cfg *model.Config) *model.TokenConfig {

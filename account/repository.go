@@ -33,7 +33,7 @@ type postgresRepository struct {
 	db *gorm.DB
 }
 
-func NewPostgresRepository(url string) (*postgresRepository, error) {
+func NewPostgresRepository(url string) (Repository, error) {
 
 	db, err := gorm.Open(postgres.Open(url), &gorm.Config{})
 

@@ -1,24 +1,33 @@
 package graphql
 
 import (
-	"log"
-
 	"github.com/231031/ecom-mcs-grpc/account"
+	"github.com/231031/ecom-mcs-grpc/authentication"
 	"github.com/231031/ecom-mcs-grpc/catalog"
 	"github.com/231031/ecom-mcs-grpc/order"
 	"github.com/99designs/gqlgen/graphql"
 )
 
+//go:generate go run github.com/99designs/gqlgen generate
+
 type Server struct {
+	authClient    *authentication.Client
 	accountClient *account.Client
 	catalogClient *catalog.Client
 	orderClient   *order.Client
 }
 
-func NewGraphQLServer(accountUrl, catalogUrl, orderUrl string) (*Server, error) {
+func NewGraphQLServer(authUrl, accountUrl, catalogUrl, orderUrl string) (*Server, error) {
+	authClient, err := authentication.NewClient(authUrl)
+	if err != nil {
+		authClient.Close()
+		return nil, err
+	}
+
 	accountClient, err := account.NewClient(accountUrl)
 	if err != nil {
-		log.Println(err)
+		authClient.Close()
+		accountClient.Close()
 		return nil, err
 	}
 
@@ -36,6 +45,7 @@ func NewGraphQLServer(accountUrl, catalogUrl, orderUrl string) (*Server, error) 
 	}
 
 	return &Server{
+		authClient,
 		accountClient,
 		catalogClient,
 		orderClient,
@@ -55,8 +65,9 @@ func (s *Server) Query() QueryResolver {
 
 }
 
-func (s *Server) ToExecutablesSchema() graphql.ExecutableSchema {
-	return NewExecutableSchema(Config{
-		Resolvers: s,
-	})
+func (s *Server) ToExecutablesSchema(m *authMiddlewre) graphql.ExecutableSchema {
+	c := Config{Resolvers: s}
+	c.Directives.HasRole = m.HasRole
+
+	return NewExecutableSchema(c)
 }

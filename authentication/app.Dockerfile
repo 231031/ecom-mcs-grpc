@@ -15,7 +15,7 @@ WORKDIR /go/src/app
 COPY go.mod go.sum .air.toml entrypoint.sh ./
 RUN go mod download
 
-COPY account account
+COPY authentication authentication
 
 # Copy and set up the entrypoint script
 COPY entrypoint.sh /entrypoint.sh

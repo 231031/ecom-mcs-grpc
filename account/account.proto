@@ -17,14 +17,13 @@ message AccountSeller {
 message BaseInfo {
     string first_name = 1;
     string last_name = 2;
-    string email = 3;
-    string phone = 4;
-    string address = 5;
+    string phone = 3;
+    string address = 4;
 }
 
 message PostAccountBuyerRequest {
-    BaseInfo base_info = 1;
-    string password = 2;
+    string id = 1;
+    BaseInfo base_info = 2;
 }
 
 message PostAccountBuyerResponse {
@@ -32,24 +31,13 @@ message PostAccountBuyerResponse {
 }
 
 message PostAccountSellerRequest {
-    BaseInfo base_info = 1;
-    string password = 2;
+    string id = 1;
+    BaseInfo base_info = 2;
     string store_name = 3;
 }
 
 message PostAccountSellerResponse {
     AccountSeller account = 1;
-}
-
-message LoginAccountRequest {
-    string email = 1;
-    string password = 2;
-}
-
-message LoginAccountResponse {
-    string token = 1;
-    AccountBuyer buyer = 2;
-    AccountSeller seller = 3;
 }
 
 message GetAccountRequest {
@@ -81,6 +69,4 @@ service AccountService {
     rpc GetAccountSeller (GetAccountRequest) returns (AccountSeller) {}
 
     rpc GetAccountSellers (GetAccountSellersRequest) returns (GetAccountSellersResponse) {}
-
-    rpc LoginAccount (LoginAccountRequest) returns (LoginAccountResponse) {}
 }

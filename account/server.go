@@ -37,7 +37,6 @@ func (s *grpcServer) PostAccountSeller(ctx context.Context, r *pb.PostAccountSel
 		BaseInfo: BaseInfo{
 			FirstName: r.BaseInfo.FirstName,
 			LastName:  r.BaseInfo.LastName,
-			Email:     r.BaseInfo.Email,
 			Phone:     r.BaseInfo.Phone,
 			Address:   r.BaseInfo.Address,
 		},
@@ -53,7 +52,6 @@ func (s *grpcServer) PostAccountSeller(ctx context.Context, r *pb.PostAccountSel
 		BaseInfo: &pb.BaseInfo{
 			FirstName: a.BaseInfo.FirstName,
 			LastName:  a.BaseInfo.LastName,
-			Email:     a.BaseInfo.Email,
 			Phone:     a.BaseInfo.Phone,
 			Address:   a.BaseInfo.Address,
 		},
@@ -65,8 +63,6 @@ func (s *grpcServer) PostAccountBuyer(ctx context.Context, r *pb.PostAccountBuye
 		BaseInfo: BaseInfo{
 			FirstName: r.BaseInfo.FirstName,
 			LastName:  r.BaseInfo.LastName,
-			Email:     r.BaseInfo.Email,
-			Password:  r.Password,
 			Phone:     r.BaseInfo.Phone,
 			Address:   r.BaseInfo.Address,
 		},
@@ -81,7 +77,6 @@ func (s *grpcServer) PostAccountBuyer(ctx context.Context, r *pb.PostAccountBuye
 		BaseInfo: &pb.BaseInfo{
 			FirstName: a.BaseInfo.FirstName,
 			LastName:  a.BaseInfo.LastName,
-			Email:     a.BaseInfo.Email,
 			Phone:     a.BaseInfo.Phone,
 			Address:   a.BaseInfo.Address,
 		},
@@ -136,7 +131,6 @@ func (s *grpcServer) GetAccountBuyer(ctx context.Context, r *pb.GetAccountReques
 	return &pb.AccountBuyer{
 		Id: a.ID,
 		BaseInfo: &pb.BaseInfo{
-			Email:     a.Email,
 			FirstName: a.FirstName,
 			LastName:  a.LastName,
 			Phone:     a.Phone,
@@ -155,7 +149,6 @@ func (s *grpcServer) GetAccountSeller(ctx context.Context, r *pb.GetAccountReque
 		Id:        a.ID,
 		StoreName: a.StoreName,
 		BaseInfo: &pb.BaseInfo{
-			Email:     a.Email,
 			FirstName: a.FirstName,
 			LastName:  a.LastName,
 			Phone:     a.Phone,
@@ -178,7 +171,6 @@ func (s *grpcServer) GetAccountSellers(ctx context.Context, r *pb.GetAccountSell
 				Id:        p.ID,
 				StoreName: p.StoreName,
 				BaseInfo: &pb.BaseInfo{
-					Email:     p.Email,
 					FirstName: p.FirstName,
 					LastName:  p.LastName,
 					Phone:     p.Phone,

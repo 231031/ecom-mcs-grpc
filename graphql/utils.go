@@ -18,18 +18,15 @@ func MapGraphQLInputToRequest(data any, selType SelectionType) any {
 		if selType == "CREATE" {
 			return &pb.PostAccountBuyerRequest{
 				BaseInfo: &pb.BaseInfo{
-					Email:     in.BaseInfo.Email,
 					FirstName: in.BaseInfo.FirstName,
 					LastName:  in.BaseInfo.LastName,
 					Phone:     in.BaseInfo.Phone,
 					Address:   in.BaseInfo.Address,
 				},
-				Password: in.Password,
 			}
 		} else if selType == "UPDATE" {
 			return &pb.AccountBuyer{
 				BaseInfo: &pb.BaseInfo{
-					Email:     in.BaseInfo.Email,
 					FirstName: in.BaseInfo.FirstName,
 					LastName:  in.BaseInfo.LastName,
 					Phone:     in.BaseInfo.Phone,
@@ -41,19 +38,16 @@ func MapGraphQLInputToRequest(data any, selType SelectionType) any {
 		if selType == "CREATE" {
 			return &pb.PostAccountSellerRequest{
 				BaseInfo: &pb.BaseInfo{
-					Email:     in.BaseInfo.Email,
 					FirstName: in.BaseInfo.FirstName,
 					LastName:  in.BaseInfo.LastName,
 					Phone:     in.BaseInfo.Phone,
 					Address:   in.BaseInfo.Address,
 				},
 				StoreName: in.StoreName,
-				Password:  in.Password,
 			}
 		} else if selType == "UPDATE" {
 			return &pb.AccountSeller{
 				BaseInfo: &pb.BaseInfo{
-					Email:     in.BaseInfo.Email,
 					FirstName: in.BaseInfo.FirstName,
 					LastName:  in.BaseInfo.LastName,
 					Phone:     in.BaseInfo.Phone,
@@ -64,4 +58,21 @@ func MapGraphQLInputToRequest(data any, selType SelectionType) any {
 		}
 	}
 	return nil
+}
+
+func MapRoleToInt(role RoleType) int32 {
+	mapRole := map[RoleType]int32{
+		RoleTypeBuyer:  0,
+		RoleTypeSeller: 1,
+	}
+
+	return mapRole[role]
+}
+
+func MapIntToRole(roleNum int32) RoleType {
+	mapRole := map[int32]RoleType{
+		0: RoleTypeBuyer,
+		1: RoleTypeSeller,
+	}
+	return mapRole[roleNum]
 }

@@ -40,7 +40,6 @@ func (c *Client) PostAccountBuyer(ctx context.Context, in *pb.PostAccountBuyerRe
 		BaseInfo: BaseInfo{
 			FirstName: r.Account.BaseInfo.FirstName,
 			LastName:  r.Account.BaseInfo.LastName,
-			Email:     r.Account.BaseInfo.Email,
 			Phone:     r.Account.BaseInfo.Phone,
 			Address:   r.Account.BaseInfo.Address,
 		},
@@ -60,7 +59,6 @@ func (c *Client) PostAccountSeller(ctx context.Context, in *pb.PostAccountSeller
 		BaseInfo: BaseInfo{
 			FirstName: r.Account.BaseInfo.FirstName,
 			LastName:  r.Account.BaseInfo.LastName,
-			Email:     r.Account.BaseInfo.Email,
 			Phone:     r.Account.BaseInfo.Phone,
 			Address:   r.Account.BaseInfo.Address,
 		},
@@ -97,7 +95,6 @@ func (c *Client) GetAccountBuyerByID(ctx context.Context, id string) (*Buyer, er
 	return &Buyer{
 		ID: r.Id,
 		BaseInfo: BaseInfo{
-			Email:     r.BaseInfo.Email,
 			FirstName: r.BaseInfo.FirstName,
 			LastName:  r.BaseInfo.LastName,
 			Phone:     r.BaseInfo.Phone,
@@ -119,7 +116,6 @@ func (c *Client) GetAccountSellerByID(ctx context.Context, id string) (*Seller, 
 		ID:        r.Id,
 		StoreName: r.StoreName,
 		BaseInfo: BaseInfo{
-			Email:     r.BaseInfo.Email,
 			FirstName: r.BaseInfo.FirstName,
 			LastName:  r.BaseInfo.LastName,
 			Phone:     r.BaseInfo.Phone,
@@ -143,7 +139,6 @@ func (c *Client) GetAccountSellers(ctx context.Context, ids []string, skip uint6
 			ID:        a.Id,
 			StoreName: a.StoreName,
 			BaseInfo: BaseInfo{
-				Email:     a.BaseInfo.Email,
 				FirstName: a.BaseInfo.FirstName,
 				LastName:  a.BaseInfo.LastName,
 				Phone:     a.BaseInfo.Phone,

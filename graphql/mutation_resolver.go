@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/231031/ecom-mcs-grpc/account/pb"
+	auth_pb "github.com/231031/ecom-mcs-grpc/authentication/pb"
 	"github.com/231031/ecom-mcs-grpc/order"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 var (
@@ -19,9 +22,33 @@ type mutationResolver struct {
 	server *Server
 }
 
+func (m *mutationResolver) CreateUser(ctx context.Context, email string, password string, role RoleType) (string, error) {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	in := &auth_pb.CreateUserRequest{
+		Email:    email,
+		Password: password,
+		Role:     MapRoleToInt(role),
+	}
+
+	_, err := m.server.authClient.CreateUser(ctx, in)
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+
+	return "", nil
+}
+
 func (m *mutationResolver) CreateAccountBuyer(ctx context.Context, in AccountBuyerInput) (*AccountBuyer, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
+
+	userAuth, err := m.GetUserContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	data := &pb.PostAccountBuyerRequest{}
 	req := MapGraphQLInputToRequest(in, TypeCreate)
@@ -32,6 +59,7 @@ func (m *mutationResolver) CreateAccountBuyer(ctx context.Context, in AccountBuy
 		return nil, ErrInvalidInfo
 	}
 
+	data.Id = userAuth.ID
 	a, err := m.server.accountClient.PostAccountBuyer(ctx, data)
 	if err != nil {
 		log.Println(err)
@@ -42,7 +70,6 @@ func (m *mutationResolver) CreateAccountBuyer(ctx context.Context, in AccountBuy
 		ID:        a.ID,
 		FirstName: a.FirstName,
 		LastName:  a.LastName,
-		Email:     a.Email,
 		Phone:     a.Phone,
 		Address:   a.Address,
 		Orders:    []*Order{},
@@ -53,6 +80,11 @@ func (m *mutationResolver) CreateAccountSeller(ctx context.Context, in AccountSe
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
+	userAuth, err := m.GetUserContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	data := &pb.PostAccountSellerRequest{}
 	req := MapGraphQLInputToRequest(in, TypeCreate)
 	switch v := req.(type) {
@@ -62,6 +94,7 @@ func (m *mutationResolver) CreateAccountSeller(ctx context.Context, in AccountSe
 		return nil, ErrInvalidInfo
 	}
 
+	data.Id = userAuth.ID
 	a, err := m.server.accountClient.PostAccountSeller(ctx, data)
 	if err != nil {
 		log.Println(err)
@@ -73,7 +106,6 @@ func (m *mutationResolver) CreateAccountSeller(ctx context.Context, in AccountSe
 		StoreName: a.StoreName,
 		FirstName: a.FirstName,
 		LastName:  a.LastName,
-		Email:     a.Email,
 		Phone:     a.Phone,
 		Address:   a.Address,
 		Products:  []*Product{},
@@ -101,7 +133,6 @@ func (m *mutationResolver) UpdateAccountBuyer(ctx context.Context, in AccountBuy
 
 	return &AccountBuyer{
 		ID:        a.Id,
-		Email:     a.BaseInfo.Email,
 		FirstName: a.BaseInfo.FirstName,
 		LastName:  a.BaseInfo.LastName,
 		Phone:     a.BaseInfo.Phone,
@@ -132,7 +163,6 @@ func (m *mutationResolver) UpdateAccountSeller(ctx context.Context, in AccountSe
 
 	return &AccountSeller{
 		ID:        a.Id,
-		Email:     a.BaseInfo.Email,
 		FirstName: a.BaseInfo.FirstName,
 		LastName:  a.BaseInfo.LastName,
 		Phone:     a.BaseInfo.Phone,
@@ -141,27 +171,59 @@ func (m *mutationResolver) UpdateAccountSeller(ctx context.Context, in AccountSe
 	}, nil
 }
 
-func (m *mutationResolver) LoginAccount(ctx context.Context, email, password string, role RoleType) (LoginResult, error) {
+func (m *mutationResolver) LoginUser(ctx context.Context, email, password string) (LoginResult, error) {
+	w, ok := ctx.Value(responseWriterKey).(http.ResponseWriter)
+	if !ok {
+		return nil, &gqlerror.Error{Message: "response writer not found in context"}
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	user, err := m.server.authClient.LoginUser(ctx, &auth_pb.LoginUserRequest{
+		Email:    email,
+		Password: password,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	cookieToken := &http.Cookie{
+		Name:     "token",
+		Value:    user.TokenResponse.GetToken(),
+		Expires:  time.Now().Add(1 * time.Hour),
+		HttpOnly: true,
+		Secure:   true,
+		Path:     "/",
+	}
+	cookieRefreshToken := &http.Cookie{
+		Name:     "refresh_token",
+		Value:    user.TokenResponse.GetRefreshToken(),
+		Expires:  time.Now().Add(240 * time.Hour),
+		HttpOnly: true,
+		Secure:   true,
+		Path:     "/",
+	}
+	http.SetCookie(w, cookieToken)
+	http.SetCookie(w, cookieRefreshToken)
+
+	// access role from context
+	role := MapIntToRole(user.Role)
 	if role == RoleTypeSeller {
 		return &AccountSeller{
-			ID:        "456",
-			Email:     email,
-			FirstName: "Jane",
-			LastName:  "Doe",
-			Phone:     "987-654-3210",
-			Address:   "456 Elm St",
+			Email: email,
 		}, nil
 	}
 
 	// Default: Return an AccountBuyer
 	return &AccountBuyer{
-		ID:        "123",
-		Email:     email,
-		FirstName: "John",
-		LastName:  "Doe",
-		Phone:     "123-456-7890",
-		Address:   "123 Main St",
+		Email: email,
 	}, nil
+}
+
+func (m *mutationResolver) RefrehToken(ctx context.Context, token string) (*RefreshToken, error) {
+	// Implement token refresh logic here
+	return &RefreshToken{}, nil
 }
 
 func (m *mutationResolver) CreateProduct(ctx context.Context, in ProductInput) (*Product, error) {
@@ -241,4 +303,13 @@ func (m *mutationResolver) DeleteOrder(ctx context.Context, id string) (string, 
 	// ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	// defer cancel()
 	return id, nil
+}
+
+func (m *mutationResolver) GetUserContext(ctx context.Context) (UserAuth, error) {
+	u, ok := ctx.Value(userCtxKey).(UserAuth)
+	if !ok {
+		return u, &gqlerror.Error{Message: "user not found in context"}
+	}
+
+	return u, nil
 }

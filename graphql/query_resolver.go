@@ -28,7 +28,6 @@ func (r *queryResolver) Buyer(ctx context.Context, id string) (*AccountBuyer, er
 
 		return &AccountBuyer{
 			ID:        a.ID,
-			Email:     a.Email,
 			FirstName: a.FirstName,
 			LastName:  a.LastName,
 			Phone:     a.Phone,
@@ -53,7 +52,6 @@ func (r *queryResolver) Seller(ctx context.Context, id string) (*AccountSeller, 
 		return &AccountSeller{
 			ID:        a.ID,
 			StoreName: a.StoreName,
-			Email:     a.Email,
 			FirstName: a.FirstName,
 			LastName:  a.LastName,
 			Phone:     a.Phone,
@@ -88,7 +86,6 @@ func (r *queryResolver) Sellers(ctx context.Context, pagination *PaginationInput
 			sellers = append(sellers, &AccountSeller{
 				StoreName: a.StoreName,
 				ID:        a.ID,
-				Email:     a.Email,
 				FirstName: a.FirstName,
 				LastName:  a.LastName,
 				Phone:     a.Phone,

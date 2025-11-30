@@ -15,7 +15,7 @@ var (
 
 type Service interface {
 	CreateUser(ctx context.Context, u *model.User) (*model.User, error)
-	LoginUser(ctx context.Context, email string, password string) (*model.TokenResponse, error)
+	LoginUser(ctx context.Context, email string, password string) (*model.UserInfo, error)
 	RefreshTokenUser(ctx context.Context, refreshToken string) (*model.TokenResponse, error)
 }
 
@@ -43,7 +43,7 @@ func (s *authService) CreateUser(ctx context.Context, u *model.User) (*model.Use
 	return u, nil
 }
 
-func (s *authService) LoginUser(ctx context.Context, email string, password string) (*model.TokenResponse, error) {
+func (s *authService) LoginUser(ctx context.Context, email string, password string) (*model.UserInfo, error) {
 	u, err := s.repository.GetUserByEmail(ctx, email)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (s *authService) LoginUser(ctx context.Context, email string, password stri
 		return nil, err
 	}
 
-	return tokenPair, nil
+	return &model.UserInfo{Email: u.Email, Role: u.Role, TokenPair: *tokenPair}, nil
 }
 
 func (s *authService) RefreshTokenUser(ctx context.Context, refreshToken string) (*model.TokenResponse, error) {

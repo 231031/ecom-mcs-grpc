@@ -5,6 +5,9 @@ enum RoleType {
   BUYER
 }
 
+# Define the directive
+directive @hasRole(role: RoleType!) on FIELD_DEFINITION
+
 interface BaseInfo {
     id: String!
     email: String!
@@ -12,6 +15,11 @@ interface BaseInfo {
     last_name: String!
     phone: String!
     address: String!
+}
+
+type RefreshToken {
+    token: String!
+    refresh_token: String!
 }
 
 type AccountBuyer implements BaseInfo {
@@ -69,7 +77,7 @@ input PaginationInput {
 }
 
 input BaseInfoInput {
-    email: String!
+    email: String
     first_name: String!
     last_name: String!
     phone: String!
@@ -79,12 +87,10 @@ input BaseInfoInput {
 input AccountSellerInput {
     store_name: String!
     base_info: BaseInfoInput!
-    password: String!
 }
 
 input AccountBuyerInput {
     base_info: BaseInfoInput!
-    password: String!
 }
 
 input ProductInput {
@@ -109,17 +115,19 @@ input OrderInput {
 union LoginResult = AccountBuyer | AccountSeller
 
 type Mutation {
-    createAccountSeller(account: AccountSellerInput!): AccountSeller!
-    updateAccountSeller(account: AccountSellerInput!, id: String!): AccountSeller!
+    createAccountSeller(account: AccountSellerInput!): AccountSeller! @hasRole(role: SELLER)
+    updateAccountSeller(account: AccountSellerInput!, id: String!): AccountSeller! @hasRole(role: SELLER)
 
-    createAccountBuyer(account: AccountBuyerInput!): AccountBuyer!
-    updateAccountBuyer(account: AccountBuyerInput!, id: String!): AccountBuyer!
+    createAccountBuyer(account: AccountBuyerInput!): AccountBuyer! @hasRole(role: BUYER)
+    updateAccountBuyer(account: AccountBuyerInput!, id: String!): AccountBuyer! @hasRole(role: BUYER)
 
-    loginAccount(email: String!, password: String!, role: RoleType!): LoginResult!
+    createUser(email: String!, password: String!, role: RoleType!): String!
+    loginUser(email: String!, password: String!): LoginResult!
+    refrehToken(token: String!): RefreshToken!
 
-    createProduct(product: ProductInput!): Product!
-    updateProduct(product: ProductInput!, id: String!): Product!
-    deleteProduct(id: String!): String!
+    createProduct(product: ProductInput!): Product! @hasRole(role: SELLER)
+    updateProduct(product: ProductInput!, id: String!): Product! @hasRole(role: SELLER)
+    deleteProduct(id: String!): String! @hasRole(role: SELLER)
 
     createOrder(order: OrderInput!): Order!
     deleteOrder(id: String!): String!

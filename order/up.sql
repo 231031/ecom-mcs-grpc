@@ -2,8 +2,9 @@ CREATE TABLE IF NOT EXISTS orders (
     id VARCHAR(27) PRIMARY KEY,
     account_id VARCHAR(27) NOT NULL,
     total_price NUMERIC(19, 2) NOT NULL,
-    payment_status VARCHAR(27) NOT NULL DEFAULT 'pending',
-    `status` VARCHAR(27) NOT NULL DEFAULT 'pending',
+    payment_status INT NOT NULL DEFAULT 0,
+    payment_id VARCHAR(127),
+    `status` INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL
 );

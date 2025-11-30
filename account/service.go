@@ -3,7 +3,6 @@ package account
 import (
 	"context"
 
-	"github.com/231031/ecom-mcs-grpc/account/utils"
 	"github.com/segmentio/ksuid"
 )
 
@@ -33,14 +32,9 @@ func NewService(r Repository) Service {
 }
 
 func (s *AccountService) PostAccountSeller(ctx context.Context, a Seller) (*Seller, error) {
+	// get id from context
 	a.ID = ksuid.New().String()
 
-	hashed, err := utils.HashPassword(a.Password)
-	if err != nil {
-		return nil, err
-	}
-
-	a.Password = hashed
 	if err := s.repository.CreateAccountSeller(ctx, a); err != nil {
 		return nil, err
 	}
@@ -48,14 +42,9 @@ func (s *AccountService) PostAccountSeller(ctx context.Context, a Seller) (*Sell
 }
 
 func (s *AccountService) PostAccountBuyer(ctx context.Context, a Buyer) (*Buyer, error) {
+	// get id from context
 	a.ID = ksuid.New().String()
 
-	hashed, err := utils.HashPassword(a.Password)
-	if err != nil {
-		return nil, err
-	}
-
-	a.Password = hashed
 	if err := s.repository.CreateAccountBuyer(ctx, a); err != nil {
 		return nil, err
 	}

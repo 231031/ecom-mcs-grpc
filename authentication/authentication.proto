@@ -16,6 +16,12 @@ message LoginUserRequest {
     string password = 2;
 }
 
+message LoginUserResponse {
+    string email = 1;
+    int32 role = 2;
+    TokenResponse token_response = 3;
+}
+
 message TokenResponse {
     string token = 1;
     string refresh_token = 2;
@@ -27,6 +33,6 @@ message RefreshTokenRequest {
 
 service AuthenticationService {
     rpc CreateUser (CreateUserRequest) returns (CreateUserResponse) {}
-    rpc LoginUser (LoginUserRequest) returns (TokenResponse) {}
+    rpc LoginUser (LoginUserRequest) returns (LoginUserResponse) {}
     rpc RefreshTokenUser (RefreshTokenRequest) returns (TokenResponse) {}
 }

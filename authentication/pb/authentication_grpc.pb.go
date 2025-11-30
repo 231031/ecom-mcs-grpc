@@ -29,7 +29,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthenticationServiceClient interface {
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
-	LoginUser(ctx context.Context, in *LoginUserRequest, opts ...grpc.CallOption) (*TokenResponse, error)
+	LoginUser(ctx context.Context, in *LoginUserRequest, opts ...grpc.CallOption) (*LoginUserResponse, error)
 	RefreshTokenUser(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*TokenResponse, error)
 }
 
@@ -51,9 +51,9 @@ func (c *authenticationServiceClient) CreateUser(ctx context.Context, in *Create
 	return out, nil
 }
 
-func (c *authenticationServiceClient) LoginUser(ctx context.Context, in *LoginUserRequest, opts ...grpc.CallOption) (*TokenResponse, error) {
+func (c *authenticationServiceClient) LoginUser(ctx context.Context, in *LoginUserRequest, opts ...grpc.CallOption) (*LoginUserResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(TokenResponse)
+	out := new(LoginUserResponse)
 	err := c.cc.Invoke(ctx, AuthenticationService_LoginUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (c *authenticationServiceClient) RefreshTokenUser(ctx context.Context, in *
 // for forward compatibility.
 type AuthenticationServiceServer interface {
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
-	LoginUser(context.Context, *LoginUserRequest) (*TokenResponse, error)
+	LoginUser(context.Context, *LoginUserRequest) (*LoginUserResponse, error)
 	RefreshTokenUser(context.Context, *RefreshTokenRequest) (*TokenResponse, error)
 	mustEmbedUnimplementedAuthenticationServiceServer()
 }
@@ -91,7 +91,7 @@ type UnimplementedAuthenticationServiceServer struct{}
 func (UnimplementedAuthenticationServiceServer) CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateUser not implemented")
 }
-func (UnimplementedAuthenticationServiceServer) LoginUser(context.Context, *LoginUserRequest) (*TokenResponse, error) {
+func (UnimplementedAuthenticationServiceServer) LoginUser(context.Context, *LoginUserRequest) (*LoginUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginUser not implemented")
 }
 func (UnimplementedAuthenticationServiceServer) RefreshTokenUser(context.Context, *RefreshTokenRequest) (*TokenResponse, error) {

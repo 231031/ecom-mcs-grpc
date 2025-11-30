@@ -37,6 +37,7 @@ func (s *grpcServer) CreateUser(ctx context.Context, in *pb.CreateUserRequest) (
 	u := &model.User{
 		Email:    in.GetEmail(),
 		Password: in.GetPassword(),
+		Role:     in.GetRole(),
 	}
 	_, err := s.service.CreateUser(ctx, u)
 	if err != nil {
@@ -45,17 +46,24 @@ func (s *grpcServer) CreateUser(ctx context.Context, in *pb.CreateUserRequest) (
 	return &pb.CreateUserResponse{}, nil
 }
 
-func (s *grpcServer) LoginUser(ctx context.Context, in *pb.LoginUserRequest) (*pb.TokenResponse, error) {
-	token, err := s.service.LoginUser(ctx, in.GetEmail(), in.GetPassword())
+func (s *grpcServer) LoginUser(ctx context.Context, in *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
+	u, err := s.service.LoginUser(ctx, in.GetEmail(), in.GetPassword())
 	if err != nil {
 		return nil, err
 	}
 
 	tokenResp := &pb.TokenResponse{
-		Token:        token.AccessToken,
-		RefreshToken: token.RefreshToken,
+		Token:        u.TokenPair.AccessToken,
+		RefreshToken: u.TokenPair.RefreshToken,
 	}
-	return tokenResp, nil
+
+	userResponse := &pb.LoginUserResponse{
+		Email:         in.GetEmail(),
+		Role:          u.Role,
+		TokenResponse: tokenResp,
+	}
+
+	return userResponse, nil
 }
 
 func (s *grpcServer) RefreshTokenUser(ctx context.Context, in *pb.RefreshTokenRequest) (*pb.TokenResponse, error) {

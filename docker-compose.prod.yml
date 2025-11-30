@@ -38,10 +38,25 @@ services:
       - account
       - catalog
       - order
+      - authentication
     environment:
       - ACCOUNT_SERVICE_URL=account:50001
       - CATALOG_SERVICE_URL=catalog:50002
       - ORDER_SERVICE_URL=order:50003
+      - AUTH_SERVICE_URL=authentication:50004
+    restart: on-failure
+  authentication:
+    build: 
+      context: .
+      dockerfile: ./authentication/app.prod.Dockerfile 
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgres://${AUTH_POST_USER}:${AUTH_POST_PASSWORD}@authentication_db/${AUTH_POST_DB}?sslmode=disable
+      - REDIS_ADDR=authentication_redis:${REDIS_PORT}
+    restart: on-failure
+
+#  databases:
   # account_db:
   #   build: 
   #     context: ./account
