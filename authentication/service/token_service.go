@@ -20,7 +20,8 @@ import (
 )
 
 var (
-	ErrUnauth = errors.New("the token is invalid")
+	ErrUnauth  = errors.New("the token is invalid")
+	ErrExpired = errors.New("the refresh token is expired")
 )
 
 type TokenService interface {
@@ -29,7 +30,6 @@ type TokenService interface {
 	generateIDToken(user *model.UserAuth, key *rsa.PrivateKey, exp int64) (string, error)
 	generateRefreshToken(id string, key string, exp int64) (*model.RefreshTokenData, error)
 	HandleRefreshToken(ctx context.Context, refreshToken string) (*model.TokenResponse, error)
-	DeleteRefreshToken(ctx context.Context, key string) error
 	hashPassword(password string) (string, error)
 	verifyPasswordSecure(storedHash, providedPassword string) (bool, error)
 }
@@ -55,22 +55,24 @@ func NewTokenService(repo repository.Repository, cfg *model.TokenConfig) TokenSe
 }
 
 func (s *tokenService) GenerateNewPairToken(ctx context.Context, userAuth *model.UserAuth, prevToken string) (*model.TokenResponse, error) {
-	// refresh token
 	if prevToken != "" {
 		key := fmt.Sprintf("refresh_token:%s", prevToken)
 		value, err := s.AuthRepository.GetAndDelRefreshToken(ctx, key)
 		if err != nil {
-			return nil, err
+			return nil, ErrExpired
 		}
 
 		identical := strings.Split(value, ":")
+		if len(identical) < 3 {
+			return nil, ErrExpired
+		}
 		userAuth.ID = identical[0]
 		userAuth.Email = identical[1]
 
 		roleType, err := strconv.ParseInt(identical[2], 10, 32)
 		if err != nil {
 			fmt.Println("error converting string to int32:", err)
-			return nil, nil
+			return nil, ErrUnauth
 		}
 		userAuth.Role = int32(roleType)
 
@@ -88,7 +90,7 @@ func (s *tokenService) GenerateNewPairToken(ctx context.Context, userAuth *model
 	}
 
 	key := fmt.Sprintf("refresh_token:%s", newRefresh.SS)
-	val := fmt.Sprintf("%s:%s:%s", userAuth.ID, userAuth.Email, string(userAuth.Role))
+	val := fmt.Sprintf("%s:%s:%s", userAuth.ID, userAuth.Email, strconv.Itoa(int(userAuth.Role)))
 	err = s.AuthRepository.StoreRefreshToken(ctx, key, val, newRefresh.ExpiresIn)
 	if err != nil {
 		return nil, err
@@ -197,16 +199,6 @@ func (s *tokenService) HandleRefreshToken(ctx context.Context, refreshToken stri
 	}
 
 	return tokenPair, nil
-}
-
-func (s *tokenService) DeleteRefreshToken(ctx context.Context, refreshToken string) error {
-	key := fmt.Sprintf("refresh_token:%s", refreshToken)
-	err := s.AuthRepository.DeleteRefreshToken(ctx, key)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (s *tokenService) hashPassword(password string) (string, error) {

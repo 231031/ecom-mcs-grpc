@@ -15,7 +15,6 @@ type Repository interface {
 	GetUserByEmail(ctx context.Context, email string) (*model.User, error)
 	StoreRefreshToken(ctx context.Context, key string, value string, exp time.Duration) error
 	GetAndDelRefreshToken(ctx context.Context, key string) (string, error)
-	DeleteRefreshToken(ctx context.Context, key string) error
 }
 
 type repository struct {
@@ -67,16 +66,9 @@ func (r *repository) StoreRefreshToken(ctx context.Context, key string, value st
 }
 
 func (r *repository) GetAndDelRefreshToken(ctx context.Context, key string) (string, error) {
-	val, err := r.redisClient.Get(ctx, key).Result()
+	val, err := r.redisClient.GetDel(ctx, key).Result()
 	if err != nil {
 		return "", err
 	}
 	return val, nil
-}
-
-func (r *repository) DeleteRefreshToken(ctx context.Context, key string) error {
-	if err := r.redisClient.Del(ctx, key).Err(); err != nil {
-		return err
-	}
-	return nil
 }

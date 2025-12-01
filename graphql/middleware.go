@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
+
 	"net/http"
 	"strings"
 
@@ -95,8 +95,6 @@ func (m *authMiddlewre) HasRole(ctx context.Context, obj interface{}, next graph
 	}
 
 	roleUser := MapIntToRole(claims.User.Role)
-	log.Println("claims role : ", claims.User.Role)
-	log.Println("role : ", roleUser)
 	if roleUser != role {
 		return nil, &gqlerror.Error{
 			Message: "Invalid role for the resource",

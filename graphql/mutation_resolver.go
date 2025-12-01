@@ -222,7 +222,41 @@ func (m *mutationResolver) LoginUser(ctx context.Context, email, password string
 }
 
 func (m *mutationResolver) RefrehToken(ctx context.Context, token string) (*RefreshToken, error) {
-	// Implement token refresh logic here
+	w, ok := ctx.Value(responseWriterKey).(http.ResponseWriter)
+	if !ok {
+		return nil, &gqlerror.Error{Message: "response writer not found in context"}
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	in := &auth_pb.RefreshTokenRequest{
+		RefreshToken: token,
+	}
+	tokenPair, err := m.server.authClient.RefreshTokenUser(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+
+	cookieToken := &http.Cookie{
+		Name:     "token",
+		Value:    tokenPair.GetToken(),
+		Expires:  time.Now().Add(1 * time.Hour),
+		HttpOnly: true,
+		Secure:   true,
+		Path:     "/",
+	}
+	cookieRefreshToken := &http.Cookie{
+		Name:     "refresh_token",
+		Value:    tokenPair.GetRefreshToken(),
+		Expires:  time.Now().Add(240 * time.Hour),
+		HttpOnly: true,
+		Secure:   true,
+		Path:     "/",
+	}
+	http.SetCookie(w, cookieToken)
+	http.SetCookie(w, cookieRefreshToken)
+
 	return &RefreshToken{}, nil
 }
 
