@@ -15,13 +15,18 @@ type Client struct {
 	service pb.OrderServiceClient
 }
 
-func NewClient(url string) (*Client, error) {
-	conn, err := grpc.NewClient(url, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func NewClient(url string, opts ...grpc.DialOption) (*Client, error) {
+	defaultOpts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	}
+	finalOpts := append(defaultOpts, opts...)
+
+	conn, err := grpc.NewClient(url, finalOpts...)
 	if err != nil {
 		return nil, err
 	}
-	service := pb.NewOrderServiceClient(conn)
 
+	service := pb.NewOrderServiceClient(conn)
 	return &Client{
 		conn:    conn,
 		service: service,

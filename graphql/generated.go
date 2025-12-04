@@ -44,7 +44,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
-	HasRole func(ctx context.Context, obj any, next graphql.Resolver, role RoleType) (res any, err error)
+	HasRole func(ctx context.Context, obj any, next graphql.Resolver, role []RoleType) (res any, err error)
 }
 
 type ComplexityRoot struct {
@@ -52,23 +52,19 @@ type ComplexityRoot struct {
 		Address   func(childComplexity int) int
 		Email     func(childComplexity int) int
 		FirstName func(childComplexity int) int
-		ID        func(childComplexity int) int
 		LastName  func(childComplexity int) int
 		Orders    func(childComplexity int) int
 		Phone     func(childComplexity int) int
-		Token     func(childComplexity int) int
 	}
 
 	AccountSeller struct {
 		Address   func(childComplexity int) int
 		Email     func(childComplexity int) int
 		FirstName func(childComplexity int) int
-		ID        func(childComplexity int) int
 		LastName  func(childComplexity int) int
 		Phone     func(childComplexity int) int
 		Products  func(childComplexity int) int
 		StoreName func(childComplexity int) int
-		Token     func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -81,8 +77,8 @@ type ComplexityRoot struct {
 		DeleteProduct       func(childComplexity int, id string) int
 		LoginUser           func(childComplexity int, email string, password string) int
 		RefrehToken         func(childComplexity int, token string) int
-		UpdateAccountBuyer  func(childComplexity int, account AccountBuyerInput, id string) int
-		UpdateAccountSeller func(childComplexity int, account AccountSellerInput, id string) int
+		UpdateAccountBuyer  func(childComplexity int, account AccountBuyerInput) int
+		UpdateAccountSeller func(childComplexity int, account AccountSellerInput) int
 		UpdateProduct       func(childComplexity int, product ProductInput, id string) int
 	}
 
@@ -110,11 +106,13 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Buyer    func(childComplexity int, id string) int
-		Orders   func(childComplexity int, id *string) int
-		Products func(childComplexity int, pagination *PaginationInput, query *string, id *string) int
-		Seller   func(childComplexity int, id string) int
-		Sellers  func(childComplexity int, pagination *PaginationInput, id []string) int
+		GetBuyer         func(childComplexity int, id string) int
+		GetOrders        func(childComplexity int, id *string) int
+		GetProducts      func(childComplexity int, pagination *PaginationInput, query *string, id *string) int
+		GetProfileBuyer  func(childComplexity int) int
+		GetProfileSeller func(childComplexity int) int
+		GetSeller        func(childComplexity int, id string) int
+		GetSellers       func(childComplexity int, pagination *PaginationInput, id []string) int
 	}
 
 	RefreshToken struct {
@@ -125,9 +123,9 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	CreateAccountSeller(ctx context.Context, account AccountSellerInput) (*AccountSeller, error)
-	UpdateAccountSeller(ctx context.Context, account AccountSellerInput, id string) (*AccountSeller, error)
+	UpdateAccountSeller(ctx context.Context, account AccountSellerInput) (*AccountSeller, error)
 	CreateAccountBuyer(ctx context.Context, account AccountBuyerInput) (*AccountBuyer, error)
-	UpdateAccountBuyer(ctx context.Context, account AccountBuyerInput, id string) (*AccountBuyer, error)
+	UpdateAccountBuyer(ctx context.Context, account AccountBuyerInput) (*AccountBuyer, error)
 	CreateUser(ctx context.Context, email string, password string, role RoleType) (string, error)
 	LoginUser(ctx context.Context, email string, password string) (LoginResult, error)
 	RefrehToken(ctx context.Context, token string) (*RefreshToken, error)
@@ -138,11 +136,13 @@ type MutationResolver interface {
 	DeleteOrder(ctx context.Context, id string) (string, error)
 }
 type QueryResolver interface {
-	Buyer(ctx context.Context, id string) (*AccountBuyer, error)
-	Seller(ctx context.Context, id string) (*AccountSeller, error)
-	Sellers(ctx context.Context, pagination *PaginationInput, id []string) ([]*AccountSeller, error)
-	Products(ctx context.Context, pagination *PaginationInput, query *string, id *string) ([]*Product, error)
-	Orders(ctx context.Context, id *string) ([]*Order, error)
+	GetProfileBuyer(ctx context.Context) (*AccountBuyer, error)
+	GetProfileSeller(ctx context.Context) (*AccountSeller, error)
+	GetSeller(ctx context.Context, id string) (*AccountSeller, error)
+	GetBuyer(ctx context.Context, id string) (*AccountBuyer, error)
+	GetSellers(ctx context.Context, pagination *PaginationInput, id []string) ([]*AccountSeller, error)
+	GetProducts(ctx context.Context, pagination *PaginationInput, query *string, id *string) ([]*Product, error)
+	GetOrders(ctx context.Context, id *string) ([]*Order, error)
 }
 
 type executableSchema struct {
@@ -182,12 +182,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.AccountBuyer.FirstName(childComplexity), true
-	case "AccountBuyer.id":
-		if e.complexity.AccountBuyer.ID == nil {
-			break
-		}
-
-		return e.complexity.AccountBuyer.ID(childComplexity), true
 	case "AccountBuyer.last_name":
 		if e.complexity.AccountBuyer.LastName == nil {
 			break
@@ -206,12 +200,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.AccountBuyer.Phone(childComplexity), true
-	case "AccountBuyer.token":
-		if e.complexity.AccountBuyer.Token == nil {
-			break
-		}
-
-		return e.complexity.AccountBuyer.Token(childComplexity), true
 
 	case "AccountSeller.address":
 		if e.complexity.AccountSeller.Address == nil {
@@ -231,12 +219,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.AccountSeller.FirstName(childComplexity), true
-	case "AccountSeller.id":
-		if e.complexity.AccountSeller.ID == nil {
-			break
-		}
-
-		return e.complexity.AccountSeller.ID(childComplexity), true
 	case "AccountSeller.last_name":
 		if e.complexity.AccountSeller.LastName == nil {
 			break
@@ -261,12 +243,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.AccountSeller.StoreName(childComplexity), true
-	case "AccountSeller.token":
-		if e.complexity.AccountSeller.Token == nil {
-			break
-		}
-
-		return e.complexity.AccountSeller.Token(childComplexity), true
 
 	case "Mutation.createAccountBuyer":
 		if e.complexity.Mutation.CreateAccountBuyer == nil {
@@ -377,7 +353,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateAccountBuyer(childComplexity, args["account"].(AccountBuyerInput), args["id"].(string)), true
+		return e.complexity.Mutation.UpdateAccountBuyer(childComplexity, args["account"].(AccountBuyerInput)), true
 	case "Mutation.updateAccountSeller":
 		if e.complexity.Mutation.UpdateAccountSeller == nil {
 			break
@@ -388,7 +364,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateAccountSeller(childComplexity, args["account"].(AccountSellerInput), args["id"].(string)), true
+		return e.complexity.Mutation.UpdateAccountSeller(childComplexity, args["account"].(AccountSellerInput)), true
 	case "Mutation.updateProduct":
 		if e.complexity.Mutation.UpdateProduct == nil {
 			break
@@ -488,61 +464,73 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Product.SellerID(childComplexity), true
 
-	case "Query.buyer":
-		if e.complexity.Query.Buyer == nil {
+	case "Query.getBuyer":
+		if e.complexity.Query.GetBuyer == nil {
 			break
 		}
 
-		args, err := ec.field_Query_buyer_args(ctx, rawArgs)
+		args, err := ec.field_Query_getBuyer_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.Buyer(childComplexity, args["id"].(string)), true
-	case "Query.orders":
-		if e.complexity.Query.Orders == nil {
+		return e.complexity.Query.GetBuyer(childComplexity, args["id"].(string)), true
+	case "Query.getOrders":
+		if e.complexity.Query.GetOrders == nil {
 			break
 		}
 
-		args, err := ec.field_Query_orders_args(ctx, rawArgs)
+		args, err := ec.field_Query_getOrders_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.Orders(childComplexity, args["id"].(*string)), true
-	case "Query.products":
-		if e.complexity.Query.Products == nil {
+		return e.complexity.Query.GetOrders(childComplexity, args["id"].(*string)), true
+	case "Query.getProducts":
+		if e.complexity.Query.GetProducts == nil {
 			break
 		}
 
-		args, err := ec.field_Query_products_args(ctx, rawArgs)
+		args, err := ec.field_Query_getProducts_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.Products(childComplexity, args["pagination"].(*PaginationInput), args["query"].(*string), args["id"].(*string)), true
-	case "Query.seller":
-		if e.complexity.Query.Seller == nil {
+		return e.complexity.Query.GetProducts(childComplexity, args["pagination"].(*PaginationInput), args["query"].(*string), args["id"].(*string)), true
+	case "Query.getProfileBuyer":
+		if e.complexity.Query.GetProfileBuyer == nil {
 			break
 		}
 
-		args, err := ec.field_Query_seller_args(ctx, rawArgs)
+		return e.complexity.Query.GetProfileBuyer(childComplexity), true
+	case "Query.getProfileSeller":
+		if e.complexity.Query.GetProfileSeller == nil {
+			break
+		}
+
+		return e.complexity.Query.GetProfileSeller(childComplexity), true
+	case "Query.getSeller":
+		if e.complexity.Query.GetSeller == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getSeller_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.Seller(childComplexity, args["id"].(string)), true
-	case "Query.sellers":
-		if e.complexity.Query.Sellers == nil {
+		return e.complexity.Query.GetSeller(childComplexity, args["id"].(string)), true
+	case "Query.getSellers":
+		if e.complexity.Query.GetSellers == nil {
 			break
 		}
 
-		args, err := ec.field_Query_sellers_args(ctx, rawArgs)
+		args, err := ec.field_Query_getSellers_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.Sellers(childComplexity, args["pagination"].(*PaginationInput), args["id"].([]string)), true
+		return e.complexity.Query.GetSellers(childComplexity, args["pagination"].(*PaginationInput), args["id"].([]string)), true
 
 	case "RefreshToken.refresh_token":
 		if e.complexity.RefreshToken.RefreshToken == nil {
@@ -691,7 +679,7 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 func (ec *executionContext) dir_hasRole_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "role", ec.unmarshalNRoleType2githubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleType)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "role", ec.unmarshalNRoleType2ᚕgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleTypeᚄ)
 	if err != nil {
 		return nil, err
 	}
@@ -821,11 +809,6 @@ func (ec *executionContext) field_Mutation_updateAccountBuyer_args(ctx context.C
 		return nil, err
 	}
 	args["account"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNString2string)
-	if err != nil {
-		return nil, err
-	}
-	args["id"] = arg1
 	return args, nil
 }
 
@@ -837,11 +820,6 @@ func (ec *executionContext) field_Mutation_updateAccountSeller_args(ctx context.
 		return nil, err
 	}
 	args["account"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNString2string)
-	if err != nil {
-		return nil, err
-	}
-	args["id"] = arg1
 	return args, nil
 }
 
@@ -872,7 +850,7 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_buyer_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Query_getBuyer_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNString2string)
@@ -883,7 +861,7 @@ func (ec *executionContext) field_Query_buyer_args(ctx context.Context, rawArgs 
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_orders_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Query_getOrders_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalOString2ᚖstring)
@@ -894,7 +872,7 @@ func (ec *executionContext) field_Query_orders_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_products_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Query_getProducts_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "pagination", ec.unmarshalOPaginationInput2ᚖgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐPaginationInput)
@@ -915,7 +893,7 @@ func (ec *executionContext) field_Query_products_args(ctx context.Context, rawAr
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_seller_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Query_getSeller_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNString2string)
@@ -926,7 +904,7 @@ func (ec *executionContext) field_Query_seller_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_sellers_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Query_getSellers_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "pagination", ec.unmarshalOPaginationInput2ᚖgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐPaginationInput)
@@ -994,35 +972,6 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _AccountBuyer_token(ctx context.Context, field graphql.CollectedField, obj *AccountBuyer) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_AccountBuyer_token,
-		func(ctx context.Context) (any, error) {
-			return obj.Token, nil
-		},
-		nil,
-		ec.marshalOString2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_AccountBuyer_token(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AccountBuyer",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _AccountBuyer_orders(ctx context.Context, field graphql.CollectedField, obj *AccountBuyer) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -1061,35 +1010,6 @@ func (ec *executionContext) fieldContext_AccountBuyer_orders(_ context.Context, 
 				return ec.fieldContext_Order_address(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AccountBuyer_id(ctx context.Context, field graphql.CollectedField, obj *AccountBuyer) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_AccountBuyer_id,
-		func(ctx context.Context) (any, error) {
-			return obj.ID, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_AccountBuyer_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AccountBuyer",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1240,35 +1160,6 @@ func (ec *executionContext) fieldContext_AccountBuyer_address(_ context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _AccountSeller_token(ctx context.Context, field graphql.CollectedField, obj *AccountSeller) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_AccountSeller_token,
-		func(ctx context.Context) (any, error) {
-			return obj.Token, nil
-		},
-		nil,
-		ec.marshalOString2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_AccountSeller_token(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AccountSeller",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _AccountSeller_store_name(ctx context.Context, field graphql.CollectedField, obj *AccountSeller) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -1336,35 +1227,6 @@ func (ec *executionContext) fieldContext_AccountSeller_products(_ context.Contex
 				return ec.fieldContext_Product_seller_id(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Product", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AccountSeller_id(ctx context.Context, field graphql.CollectedField, obj *AccountSeller) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_AccountSeller_id,
-		func(ctx context.Context) (any, error) {
-			return obj.ID, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_AccountSeller_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AccountSeller",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1529,7 +1391,7 @@ func (ec *executionContext) _Mutation_createAccountSeller(ctx context.Context, f
 			directive0 := next
 
 			directive1 := func(ctx context.Context) (any, error) {
-				role, err := ec.unmarshalNRoleType2githubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleType(ctx, "SELLER")
+				role, err := ec.unmarshalNRoleType2ᚕgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleTypeᚄ(ctx, []any{"SELLER"})
 				if err != nil {
 					var zeroVal *AccountSeller
 					return zeroVal, err
@@ -1558,14 +1420,10 @@ func (ec *executionContext) fieldContext_Mutation_createAccountSeller(ctx contex
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "token":
-				return ec.fieldContext_AccountSeller_token(ctx, field)
 			case "store_name":
 				return ec.fieldContext_AccountSeller_store_name(ctx, field)
 			case "products":
 				return ec.fieldContext_AccountSeller_products(ctx, field)
-			case "id":
-				return ec.fieldContext_AccountSeller_id(ctx, field)
 			case "email":
 				return ec.fieldContext_AccountSeller_email(ctx, field)
 			case "first_name":
@@ -1602,13 +1460,13 @@ func (ec *executionContext) _Mutation_updateAccountSeller(ctx context.Context, f
 		ec.fieldContext_Mutation_updateAccountSeller,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UpdateAccountSeller(ctx, fc.Args["account"].(AccountSellerInput), fc.Args["id"].(string))
+			return ec.resolvers.Mutation().UpdateAccountSeller(ctx, fc.Args["account"].(AccountSellerInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
 
 			directive1 := func(ctx context.Context) (any, error) {
-				role, err := ec.unmarshalNRoleType2githubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleType(ctx, "SELLER")
+				role, err := ec.unmarshalNRoleType2ᚕgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleTypeᚄ(ctx, []any{"SELLER"})
 				if err != nil {
 					var zeroVal *AccountSeller
 					return zeroVal, err
@@ -1637,14 +1495,10 @@ func (ec *executionContext) fieldContext_Mutation_updateAccountSeller(ctx contex
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "token":
-				return ec.fieldContext_AccountSeller_token(ctx, field)
 			case "store_name":
 				return ec.fieldContext_AccountSeller_store_name(ctx, field)
 			case "products":
 				return ec.fieldContext_AccountSeller_products(ctx, field)
-			case "id":
-				return ec.fieldContext_AccountSeller_id(ctx, field)
 			case "email":
 				return ec.fieldContext_AccountSeller_email(ctx, field)
 			case "first_name":
@@ -1687,7 +1541,7 @@ func (ec *executionContext) _Mutation_createAccountBuyer(ctx context.Context, fi
 			directive0 := next
 
 			directive1 := func(ctx context.Context) (any, error) {
-				role, err := ec.unmarshalNRoleType2githubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleType(ctx, "BUYER")
+				role, err := ec.unmarshalNRoleType2ᚕgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleTypeᚄ(ctx, []any{"BUYER"})
 				if err != nil {
 					var zeroVal *AccountBuyer
 					return zeroVal, err
@@ -1716,12 +1570,8 @@ func (ec *executionContext) fieldContext_Mutation_createAccountBuyer(ctx context
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "token":
-				return ec.fieldContext_AccountBuyer_token(ctx, field)
 			case "orders":
 				return ec.fieldContext_AccountBuyer_orders(ctx, field)
-			case "id":
-				return ec.fieldContext_AccountBuyer_id(ctx, field)
 			case "email":
 				return ec.fieldContext_AccountBuyer_email(ctx, field)
 			case "first_name":
@@ -1758,13 +1608,13 @@ func (ec *executionContext) _Mutation_updateAccountBuyer(ctx context.Context, fi
 		ec.fieldContext_Mutation_updateAccountBuyer,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UpdateAccountBuyer(ctx, fc.Args["account"].(AccountBuyerInput), fc.Args["id"].(string))
+			return ec.resolvers.Mutation().UpdateAccountBuyer(ctx, fc.Args["account"].(AccountBuyerInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
 
 			directive1 := func(ctx context.Context) (any, error) {
-				role, err := ec.unmarshalNRoleType2githubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleType(ctx, "BUYER")
+				role, err := ec.unmarshalNRoleType2ᚕgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleTypeᚄ(ctx, []any{"BUYER"})
 				if err != nil {
 					var zeroVal *AccountBuyer
 					return zeroVal, err
@@ -1793,12 +1643,8 @@ func (ec *executionContext) fieldContext_Mutation_updateAccountBuyer(ctx context
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "token":
-				return ec.fieldContext_AccountBuyer_token(ctx, field)
 			case "orders":
 				return ec.fieldContext_AccountBuyer_orders(ctx, field)
-			case "id":
-				return ec.fieldContext_AccountBuyer_id(ctx, field)
 			case "email":
 				return ec.fieldContext_AccountBuyer_email(ctx, field)
 			case "first_name":
@@ -1970,7 +1816,7 @@ func (ec *executionContext) _Mutation_createProduct(ctx context.Context, field g
 			directive0 := next
 
 			directive1 := func(ctx context.Context) (any, error) {
-				role, err := ec.unmarshalNRoleType2githubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleType(ctx, "SELLER")
+				role, err := ec.unmarshalNRoleType2ᚕgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleTypeᚄ(ctx, []any{"SELLER"})
 				if err != nil {
 					var zeroVal *Product
 					return zeroVal, err
@@ -2043,7 +1889,7 @@ func (ec *executionContext) _Mutation_updateProduct(ctx context.Context, field g
 			directive0 := next
 
 			directive1 := func(ctx context.Context) (any, error) {
-				role, err := ec.unmarshalNRoleType2githubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleType(ctx, "SELLER")
+				role, err := ec.unmarshalNRoleType2ᚕgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleTypeᚄ(ctx, []any{"SELLER"})
 				if err != nil {
 					var zeroVal *Product
 					return zeroVal, err
@@ -2116,7 +1962,7 @@ func (ec *executionContext) _Mutation_deleteProduct(ctx context.Context, field g
 			directive0 := next
 
 			directive1 := func(ctx context.Context) (any, error) {
-				role, err := ec.unmarshalNRoleType2githubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleType(ctx, "SELLER")
+				role, err := ec.unmarshalNRoleType2ᚕgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleTypeᚄ(ctx, []any{"SELLER"})
 				if err != nil {
 					var zeroVal string
 					return zeroVal, err
@@ -2310,12 +2156,8 @@ func (ec *executionContext) fieldContext_Order_account(_ context.Context, field 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "token":
-				return ec.fieldContext_AccountBuyer_token(ctx, field)
 			case "orders":
 				return ec.fieldContext_AccountBuyer_orders(ctx, field)
-			case "id":
-				return ec.fieldContext_AccountBuyer_id(ctx, field)
 			case "email":
 				return ec.fieldContext_AccountBuyer_email(ctx, field)
 			case "first_name":
@@ -2701,24 +2543,41 @@ func (ec *executionContext) fieldContext_Product_seller_id(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_buyer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_getProfileBuyer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Query_buyer,
+		ec.fieldContext_Query_getProfileBuyer,
 		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Buyer(ctx, fc.Args["id"].(string))
+			return ec.resolvers.Query().GetProfileBuyer(ctx)
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRoleType2ᚕgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleTypeᚄ(ctx, []any{"BUYER"})
+				if err != nil {
+					var zeroVal *AccountBuyer
+					return zeroVal, err
+				}
+				if ec.directives.HasRole == nil {
+					var zeroVal *AccountBuyer
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.directives.HasRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNAccountBuyer2ᚖgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐAccountBuyer,
 		true,
 		true,
 	)
 }
 
-func (ec *executionContext) fieldContext_Query_buyer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_getProfileBuyer(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -2726,12 +2585,208 @@ func (ec *executionContext) fieldContext_Query_buyer(ctx context.Context, field 
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "token":
-				return ec.fieldContext_AccountBuyer_token(ctx, field)
 			case "orders":
 				return ec.fieldContext_AccountBuyer_orders(ctx, field)
-			case "id":
-				return ec.fieldContext_AccountBuyer_id(ctx, field)
+			case "email":
+				return ec.fieldContext_AccountBuyer_email(ctx, field)
+			case "first_name":
+				return ec.fieldContext_AccountBuyer_first_name(ctx, field)
+			case "last_name":
+				return ec.fieldContext_AccountBuyer_last_name(ctx, field)
+			case "phone":
+				return ec.fieldContext_AccountBuyer_phone(ctx, field)
+			case "address":
+				return ec.fieldContext_AccountBuyer_address(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AccountBuyer", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getProfileSeller(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_getProfileSeller,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Query().GetProfileSeller(ctx)
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRoleType2ᚕgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleTypeᚄ(ctx, []any{"SELLER"})
+				if err != nil {
+					var zeroVal *AccountSeller
+					return zeroVal, err
+				}
+				if ec.directives.HasRole == nil {
+					var zeroVal *AccountSeller
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.directives.HasRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNAccountSeller2ᚖgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐAccountSeller,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_getProfileSeller(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "store_name":
+				return ec.fieldContext_AccountSeller_store_name(ctx, field)
+			case "products":
+				return ec.fieldContext_AccountSeller_products(ctx, field)
+			case "email":
+				return ec.fieldContext_AccountSeller_email(ctx, field)
+			case "first_name":
+				return ec.fieldContext_AccountSeller_first_name(ctx, field)
+			case "last_name":
+				return ec.fieldContext_AccountSeller_last_name(ctx, field)
+			case "phone":
+				return ec.fieldContext_AccountSeller_phone(ctx, field)
+			case "address":
+				return ec.fieldContext_AccountSeller_address(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AccountSeller", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getSeller(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_getSeller,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().GetSeller(ctx, fc.Args["id"].(string))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRoleType2ᚕgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleTypeᚄ(ctx, []any{"BUYER", "SELLER"})
+				if err != nil {
+					var zeroVal *AccountSeller
+					return zeroVal, err
+				}
+				if ec.directives.HasRole == nil {
+					var zeroVal *AccountSeller
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.directives.HasRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNAccountSeller2ᚖgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐAccountSeller,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_getSeller(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "store_name":
+				return ec.fieldContext_AccountSeller_store_name(ctx, field)
+			case "products":
+				return ec.fieldContext_AccountSeller_products(ctx, field)
+			case "email":
+				return ec.fieldContext_AccountSeller_email(ctx, field)
+			case "first_name":
+				return ec.fieldContext_AccountSeller_first_name(ctx, field)
+			case "last_name":
+				return ec.fieldContext_AccountSeller_last_name(ctx, field)
+			case "phone":
+				return ec.fieldContext_AccountSeller_phone(ctx, field)
+			case "address":
+				return ec.fieldContext_AccountSeller_address(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AccountSeller", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getSeller_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getBuyer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_getBuyer,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().GetBuyer(ctx, fc.Args["id"].(string))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRoleType2ᚕgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleTypeᚄ(ctx, []any{"SELLER"})
+				if err != nil {
+					var zeroVal *AccountBuyer
+					return zeroVal, err
+				}
+				if ec.directives.HasRole == nil {
+					var zeroVal *AccountBuyer
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.directives.HasRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNAccountBuyer2ᚖgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐAccountBuyer,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_getBuyer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "orders":
+				return ec.fieldContext_AccountBuyer_orders(ctx, field)
 			case "email":
 				return ec.fieldContext_AccountBuyer_email(ctx, field)
 			case "first_name":
@@ -2753,92 +2808,49 @@ func (ec *executionContext) fieldContext_Query_buyer(ctx context.Context, field 
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_buyer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_getBuyer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_seller(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_getSellers(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Query_seller,
+		ec.fieldContext_Query_getSellers,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Seller(ctx, fc.Args["id"].(string))
+			return ec.resolvers.Query().GetSellers(ctx, fc.Args["pagination"].(*PaginationInput), fc.Args["id"].([]string))
 		},
-		nil,
-		ec.marshalNAccountSeller2ᚖgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐAccountSeller,
-		true,
-		true,
-	)
-}
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
 
-func (ec *executionContext) fieldContext_Query_seller(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "token":
-				return ec.fieldContext_AccountSeller_token(ctx, field)
-			case "store_name":
-				return ec.fieldContext_AccountSeller_store_name(ctx, field)
-			case "products":
-				return ec.fieldContext_AccountSeller_products(ctx, field)
-			case "id":
-				return ec.fieldContext_AccountSeller_id(ctx, field)
-			case "email":
-				return ec.fieldContext_AccountSeller_email(ctx, field)
-			case "first_name":
-				return ec.fieldContext_AccountSeller_first_name(ctx, field)
-			case "last_name":
-				return ec.fieldContext_AccountSeller_last_name(ctx, field)
-			case "phone":
-				return ec.fieldContext_AccountSeller_phone(ctx, field)
-			case "address":
-				return ec.fieldContext_AccountSeller_address(ctx, field)
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRoleType2ᚕgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleTypeᚄ(ctx, []any{"BUYER", "SELLER"})
+				if err != nil {
+					var zeroVal []*AccountSeller
+					return zeroVal, err
+				}
+				if ec.directives.HasRole == nil {
+					var zeroVal []*AccountSeller
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.directives.HasRole(ctx, nil, directive0, role)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type AccountSeller", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_seller_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
 
-func (ec *executionContext) _Query_sellers(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Query_sellers,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Sellers(ctx, fc.Args["pagination"].(*PaginationInput), fc.Args["id"].([]string))
+			next = directive1
+			return next
 		},
-		nil,
 		ec.marshalNAccountSeller2ᚕᚖgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐAccountSellerᚄ,
 		true,
 		true,
 	)
 }
 
-func (ec *executionContext) fieldContext_Query_sellers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_getSellers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -2846,14 +2858,10 @@ func (ec *executionContext) fieldContext_Query_sellers(ctx context.Context, fiel
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "token":
-				return ec.fieldContext_AccountSeller_token(ctx, field)
 			case "store_name":
 				return ec.fieldContext_AccountSeller_store_name(ctx, field)
 			case "products":
 				return ec.fieldContext_AccountSeller_products(ctx, field)
-			case "id":
-				return ec.fieldContext_AccountSeller_id(ctx, field)
 			case "email":
 				return ec.fieldContext_AccountSeller_email(ctx, field)
 			case "first_name":
@@ -2875,31 +2883,49 @@ func (ec *executionContext) fieldContext_Query_sellers(ctx context.Context, fiel
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_sellers_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_getSellers_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_products(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_getProducts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Query_products,
+		ec.fieldContext_Query_getProducts,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Products(ctx, fc.Args["pagination"].(*PaginationInput), fc.Args["query"].(*string), fc.Args["id"].(*string))
+			return ec.resolvers.Query().GetProducts(ctx, fc.Args["pagination"].(*PaginationInput), fc.Args["query"].(*string), fc.Args["id"].(*string))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRoleType2ᚕgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleTypeᚄ(ctx, []any{"BUYER", "SELLER"})
+				if err != nil {
+					var zeroVal []*Product
+					return zeroVal, err
+				}
+				if ec.directives.HasRole == nil {
+					var zeroVal []*Product
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.directives.HasRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNProduct2ᚕᚖgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐProductᚄ,
 		true,
 		true,
 	)
 }
 
-func (ec *executionContext) fieldContext_Query_products(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_getProducts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -2930,31 +2956,49 @@ func (ec *executionContext) fieldContext_Query_products(ctx context.Context, fie
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_products_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_getProducts_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_orders(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_getOrders(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Query_orders,
+		ec.fieldContext_Query_getOrders,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Orders(ctx, fc.Args["id"].(*string))
+			return ec.resolvers.Query().GetOrders(ctx, fc.Args["id"].(*string))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRoleType2ᚕgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleTypeᚄ(ctx, []any{"BUYER", "SELLER"})
+				if err != nil {
+					var zeroVal []*Order
+					return zeroVal, err
+				}
+				if ec.directives.HasRole == nil {
+					var zeroVal []*Order
+					return zeroVal, errors.New("directive hasRole is not implemented")
+				}
+				return ec.directives.HasRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNOrder2ᚕᚖgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐOrderᚄ,
 		true,
 		true,
 	)
 }
 
-func (ec *executionContext) fieldContext_Query_orders(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_getOrders(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -2985,7 +3029,7 @@ func (ec *executionContext) fieldContext_Query_orders(ctx context.Context, field
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_orders_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_getOrders_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -4727,20 +4771,13 @@ func (ec *executionContext) unmarshalInputOrderInput(ctx context.Context, obj an
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"account_id", "products", "address"}
+	fieldsInOrder := [...]string{"products", "address"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "account_id":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("account_id"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.AccountID = data
 		case "products":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("products"))
 			data, err := ec.unmarshalNOrderProductInput2ᚕᚖgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐOrderProductInputᚄ(ctx, v)
@@ -4836,20 +4873,13 @@ func (ec *executionContext) unmarshalInputProductInput(ctx context.Context, obj 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"seller_id", "name", "description", "price", "quantity"}
+	fieldsInOrder := [...]string{"name", "description", "price", "quantity"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "seller_id":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("seller_id"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.SellerID = data
 		case "name":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -4949,15 +4979,8 @@ func (ec *executionContext) _AccountBuyer(ctx context.Context, sel ast.Selection
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("AccountBuyer")
-		case "token":
-			out.Values[i] = ec._AccountBuyer_token(ctx, field, obj)
 		case "orders":
 			out.Values[i] = ec._AccountBuyer_orders(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "id":
-			out.Values[i] = ec._AccountBuyer_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -5020,8 +5043,6 @@ func (ec *executionContext) _AccountSeller(ctx context.Context, sel ast.Selectio
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("AccountSeller")
-		case "token":
-			out.Values[i] = ec._AccountSeller_token(ctx, field, obj)
 		case "store_name":
 			out.Values[i] = ec._AccountSeller_store_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -5029,11 +5050,6 @@ func (ec *executionContext) _AccountSeller(ctx context.Context, sel ast.Selectio
 			}
 		case "products":
 			out.Values[i] = ec._AccountSeller_products(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "id":
-			out.Values[i] = ec._AccountSeller_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -5402,7 +5418,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "buyer":
+		case "getProfileBuyer":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -5411,7 +5427,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_buyer(ctx, field)
+				res = ec._Query_getProfileBuyer(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -5424,7 +5440,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "seller":
+		case "getProfileSeller":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -5433,7 +5449,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_seller(ctx, field)
+				res = ec._Query_getProfileSeller(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -5446,7 +5462,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "sellers":
+		case "getSeller":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -5455,7 +5471,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_sellers(ctx, field)
+				res = ec._Query_getSeller(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -5468,7 +5484,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "products":
+		case "getBuyer":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -5477,7 +5493,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_products(ctx, field)
+				res = ec._Query_getBuyer(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -5490,7 +5506,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "orders":
+		case "getSellers":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -5499,7 +5515,51 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_orders(ctx, field)
+				res = ec._Query_getSellers(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getProducts":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getProducts(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getOrders":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getOrders(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -6289,6 +6349,65 @@ func (ec *executionContext) unmarshalNRoleType2githubᚗcomᚋ231031ᚋecomᚑmc
 
 func (ec *executionContext) marshalNRoleType2githubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleType(ctx context.Context, sel ast.SelectionSet, v RoleType) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) unmarshalNRoleType2ᚕgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleTypeᚄ(ctx context.Context, v any) ([]RoleType, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]RoleType, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNRoleType2githubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleType(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNRoleType2ᚕgithubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []RoleType) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNRoleType2githubᚗcomᚋ231031ᚋecomᚑmcsᚑgrpcᚋgraphqlᚐRoleType(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {

@@ -6,6 +6,7 @@ import (
 	"github.com/231031/ecom-mcs-grpc/catalog"
 	"github.com/231031/ecom-mcs-grpc/order"
 	"github.com/99designs/gqlgen/graphql"
+	"google.golang.org/grpc"
 )
 
 //go:generate go run github.com/99designs/gqlgen generate
@@ -18,26 +19,28 @@ type Server struct {
 }
 
 func NewGraphQLServer(authUrl, accountUrl, catalogUrl, orderUrl string) (*Server, error) {
+	metadataOption := grpc.WithUnaryInterceptor(MetadataInterceptor)
+
 	authClient, err := authentication.NewClient(authUrl)
 	if err != nil {
 		authClient.Close()
 		return nil, err
 	}
 
-	accountClient, err := account.NewClient(accountUrl)
+	accountClient, err := account.NewClient(accountUrl, metadataOption)
 	if err != nil {
 		authClient.Close()
 		accountClient.Close()
 		return nil, err
 	}
 
-	catalogClient, err := catalog.NewClient(catalogUrl)
+	catalogClient, err := catalog.NewClient(catalogUrl, metadataOption)
 	if err != nil {
 		accountClient.Close()
 		return nil, err
 	}
 
-	orderClient, err := order.NewClient(orderUrl)
+	orderClient, err := order.NewClient(orderUrl, metadataOption)
 	if err != nil {
 		accountClient.Close()
 		catalogClient.Close()

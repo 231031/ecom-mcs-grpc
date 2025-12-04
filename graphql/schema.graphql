@@ -6,10 +6,9 @@ enum RoleType {
 }
 
 # Define the directive
-directive @hasRole(role: RoleType!) on FIELD_DEFINITION
+directive @hasRole(role: [RoleType!]!) on FIELD_DEFINITION
 
 interface BaseInfo {
-    id: String!
     email: String!
     first_name: String!
     last_name: String!
@@ -23,10 +22,8 @@ type RefreshToken {
 }
 
 type AccountBuyer implements BaseInfo {
-    token: String
     orders: [Order!]!
 
-    id: String!
     email: String!
     first_name: String!
     last_name: String!
@@ -35,11 +32,9 @@ type AccountBuyer implements BaseInfo {
 }
 
 type AccountSeller implements BaseInfo {
-    token: String
     store_name: String!
     products: [Product!]!
 
-    id: String!
     email: String!
     first_name: String!
     last_name: String!
@@ -94,7 +89,6 @@ input AccountBuyerInput {
 }
 
 input ProductInput {
-    seller_id: String!
     name: String!
     description: String!
     price: Float!
@@ -107,7 +101,6 @@ input OrderProductInput {
 }
 
 input OrderInput {
-    account_id: String!
     products: [OrderProductInput!]!
     address: String!
 }
@@ -115,29 +108,32 @@ input OrderInput {
 union LoginResult = AccountBuyer | AccountSeller
 
 type Mutation {
-    createAccountSeller(account: AccountSellerInput!): AccountSeller! @hasRole(role: SELLER)
-    updateAccountSeller(account: AccountSellerInput!, id: String!): AccountSeller! @hasRole(role: SELLER)
+    createAccountSeller(account: AccountSellerInput!): AccountSeller! @hasRole(role: [SELLER])
+    updateAccountSeller(account: AccountSellerInput!): AccountSeller! @hasRole(role: [SELLER])
 
-    createAccountBuyer(account: AccountBuyerInput!): AccountBuyer! @hasRole(role: BUYER)
-    updateAccountBuyer(account: AccountBuyerInput!, id: String!): AccountBuyer! @hasRole(role: BUYER)
+    createAccountBuyer(account: AccountBuyerInput!): AccountBuyer! @hasRole(role: [BUYER])
+    updateAccountBuyer(account: AccountBuyerInput!): AccountBuyer! @hasRole(role: [BUYER])
 
     createUser(email: String!, password: String!, role: RoleType!): String!
     loginUser(email: String!, password: String!): LoginResult!
     refrehToken(token: String!): RefreshToken!
 
-    createProduct(product: ProductInput!): Product! @hasRole(role: SELLER)
-    updateProduct(product: ProductInput!, id: String!): Product! @hasRole(role: SELLER)
-    deleteProduct(id: String!): String! @hasRole(role: SELLER)
+    createProduct(product: ProductInput!): Product! @hasRole(role: [SELLER])
+    updateProduct(product: ProductInput!, id: String!): Product! @hasRole(role: [SELLER])
+    deleteProduct(id: String!): String! @hasRole(role: [SELLER])
 
     createOrder(order: OrderInput!): Order!
     deleteOrder(id: String!): String!
 }
 
 type Query {
-    buyer(id: String!): AccountBuyer!
-    seller(id: String!): AccountSeller!
-    sellers(pagination: PaginationInput, id:[String!]): [AccountSeller!]!
-    products(pagination: PaginationInput, query: String, id: String): [Product!]!
-    orders(id: String): [Order!]!
+    getProfileBuyer: AccountBuyer! @hasRole(role: [BUYER])
+    getProfileSeller: AccountSeller! @hasRole(role: [SELLER])
+    getSeller(id: String!): AccountSeller! @hasRole(role: [BUYER, SELLER])
+    getBuyer(id: String!): AccountBuyer! @hasRole(role: [SELLER])
+    getSellers(pagination: PaginationInput, id:[String!]): [AccountSeller!]! @hasRole(role: [BUYER, SELLER])
+
+    getProducts(pagination: PaginationInput, query: String, id: String): [Product!]! @hasRole(role: [BUYER, SELLER])
+    getOrders(id: String): [Order!]! @hasRole(role: [BUYER, SELLER])
 }
 

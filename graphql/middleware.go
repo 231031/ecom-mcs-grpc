@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"slices"
+	"time"
 
 	"net/http"
 	"strings"
@@ -13,6 +15,8 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/golang-jwt/jwt"
 	"github.com/vektah/gqlparser/v2/gqlerror"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 type UserAuth struct {
@@ -73,8 +77,19 @@ func ResponseWriterGetTokenMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func (m *authMiddlewre) HasRole(ctx context.Context, obj interface{}, next graphql.Resolver, role RoleType) (interface{}, error) {
-	tokenStr := ctx.Value("token").(string)
+func (m *authMiddlewre) HasRole(ctx context.Context, obj interface{}, next graphql.Resolver, role []RoleType) (interface{}, error) {
+	tokenIn := ctx.Value("token")
+	if tokenIn == nil {
+		return nil, &gqlerror.Error{
+			Message: "Missing authorization token",
+			Extensions: map[string]interface{}{
+				"code": "UNAUTHORIZED",
+			},
+		}
+	}
+
+	var tokenStr string
+	tokenStr = tokenIn.(string)
 	if tokenStr == "" {
 		return nil, &gqlerror.Error{
 			Message: "Missing authorization token",
@@ -95,7 +110,7 @@ func (m *authMiddlewre) HasRole(ctx context.Context, obj interface{}, next graph
 	}
 
 	roleUser := MapIntToRole(claims.User.Role)
-	if roleUser != role {
+	if have := slices.Contains(role, roleUser); !have {
 		return nil, &gqlerror.Error{
 			Message: "Invalid role for the resource",
 			Extensions: map[string]interface{}{
@@ -132,4 +147,33 @@ func (m *authMiddlewre) ValidateToken(tokenStr string) (*TokenClaims, error) {
 	}
 
 	return claims, nil
+}
+
+func GetUserContext(ctx context.Context) (UserAuth, error) {
+	u, ok := ctx.Value(userCtxKey).(UserAuth)
+	if !ok {
+		return u, &gqlerror.Error{Message: "user not found in context"}
+	}
+
+	return u, nil
+}
+
+func MetadataInterceptor(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	user, ok := ctx.Value(userCtxKey).(*UserAuth)
+	if ok {
+		md := metadata.New(map[string]string{
+			"id":    user.ID,
+			"email": user.Email,
+			"role":  fmt.Sprintf("%d", user.Role),
+		})
+		ctx = metadata.NewOutgoingContext(ctx, md)
+	}
+
+	if _, ok := ctx.Deadline(); !ok {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+	}
+
+	return invoker(ctx, method, req, reply, cc, opts...)
 }

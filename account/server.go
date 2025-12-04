@@ -33,6 +33,7 @@ func ListenGRPC(s Service, port int) error {
 
 func (s *grpcServer) PostAccountSeller(ctx context.Context, r *pb.PostAccountSellerRequest) (*pb.PostAccountSellerResponse, error) {
 	seller := Seller{
+		ID:        r.Id,
 		StoreName: r.StoreName,
 		BaseInfo: BaseInfo{
 			FirstName: r.BaseInfo.FirstName,
@@ -60,6 +61,7 @@ func (s *grpcServer) PostAccountSeller(ctx context.Context, r *pb.PostAccountSel
 
 func (s *grpcServer) PostAccountBuyer(ctx context.Context, r *pb.PostAccountBuyerRequest) (*pb.PostAccountBuyerResponse, error) {
 	buyer := Buyer{
+		ID: r.Id,
 		BaseInfo: BaseInfo{
 			FirstName: r.BaseInfo.FirstName,
 			LastName:  r.BaseInfo.LastName,

@@ -12,7 +12,6 @@ import (
 
 type BaseInfo interface {
 	IsBaseInfo()
-	GetID() string
 	GetEmail() string
 	GetFirstName() string
 	GetLastName() string
@@ -25,9 +24,7 @@ type LoginResult interface {
 }
 
 type AccountBuyer struct {
-	Token     *string  `json:"token,omitempty"`
 	Orders    []*Order `json:"orders"`
-	ID        string   `json:"id"`
 	Email     string   `json:"email"`
 	FirstName string   `json:"first_name"`
 	LastName  string   `json:"last_name"`
@@ -36,7 +33,6 @@ type AccountBuyer struct {
 }
 
 func (AccountBuyer) IsBaseInfo()               {}
-func (this AccountBuyer) GetID() string        { return this.ID }
 func (this AccountBuyer) GetEmail() string     { return this.Email }
 func (this AccountBuyer) GetFirstName() string { return this.FirstName }
 func (this AccountBuyer) GetLastName() string  { return this.LastName }
@@ -50,10 +46,8 @@ type AccountBuyerInput struct {
 }
 
 type AccountSeller struct {
-	Token     *string    `json:"token,omitempty"`
 	StoreName string     `json:"store_name"`
 	Products  []*Product `json:"products"`
-	ID        string     `json:"id"`
 	Email     string     `json:"email"`
 	FirstName string     `json:"first_name"`
 	LastName  string     `json:"last_name"`
@@ -62,7 +56,6 @@ type AccountSeller struct {
 }
 
 func (AccountSeller) IsBaseInfo()               {}
-func (this AccountSeller) GetID() string        { return this.ID }
 func (this AccountSeller) GetEmail() string     { return this.Email }
 func (this AccountSeller) GetFirstName() string { return this.FirstName }
 func (this AccountSeller) GetLastName() string  { return this.LastName }
@@ -97,9 +90,8 @@ type Order struct {
 }
 
 type OrderInput struct {
-	AccountID string               `json:"account_id"`
-	Products  []*OrderProductInput `json:"products"`
-	Address   string               `json:"address"`
+	Products []*OrderProductInput `json:"products"`
+	Address  string               `json:"address"`
 }
 
 type OrderProduct struct {
@@ -127,7 +119,6 @@ type Product struct {
 }
 
 type ProductInput struct {
-	SellerID    string  `json:"seller_id"`
 	Name        string  `json:"name"`
 	Description string  `json:"description"`
 	Price       float64 `json:"price"`

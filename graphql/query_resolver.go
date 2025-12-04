@@ -15,7 +15,54 @@ type queryResolver struct {
 	server *Server
 }
 
-func (r *queryResolver) Buyer(ctx context.Context, id string) (*AccountBuyer, error) {
+func (r *queryResolver) GetProfileBuyer(ctx context.Context) (*AccountBuyer, error) {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	userAuth, err := GetUserContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	a, err := r.server.accountClient.GetAccountBuyerByID(ctx, userAuth.ID)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	return &AccountBuyer{
+		FirstName: a.FirstName,
+		LastName:  a.LastName,
+		Phone:     a.Phone,
+		Address:   a.Address,
+	}, nil
+}
+
+func (r *queryResolver) GetProfileSeller(ctx context.Context) (*AccountSeller, error) {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	userAuth, err := GetUserContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	a, err := r.server.accountClient.GetAccountSellerByID(ctx, userAuth.ID)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	return &AccountSeller{
+		StoreName: a.StoreName,
+		FirstName: a.FirstName,
+		LastName:  a.LastName,
+		Phone:     a.Phone,
+		Address:   a.Address,
+	}, nil
+}
+
+func (r *queryResolver) GetBuyer(ctx context.Context, id string) (*AccountBuyer, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
@@ -27,7 +74,6 @@ func (r *queryResolver) Buyer(ctx context.Context, id string) (*AccountBuyer, er
 		}
 
 		return &AccountBuyer{
-			ID:        a.ID,
 			FirstName: a.FirstName,
 			LastName:  a.LastName,
 			Phone:     a.Phone,
@@ -38,7 +84,7 @@ func (r *queryResolver) Buyer(ctx context.Context, id string) (*AccountBuyer, er
 	return nil, ErrInvalidID
 }
 
-func (r *queryResolver) Seller(ctx context.Context, id string) (*AccountSeller, error) {
+func (r *queryResolver) GetSeller(ctx context.Context, id string) (*AccountSeller, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
@@ -50,7 +96,6 @@ func (r *queryResolver) Seller(ctx context.Context, id string) (*AccountSeller, 
 		}
 
 		return &AccountSeller{
-			ID:        a.ID,
 			StoreName: a.StoreName,
 			FirstName: a.FirstName,
 			LastName:  a.LastName,
@@ -62,7 +107,7 @@ func (r *queryResolver) Seller(ctx context.Context, id string) (*AccountSeller, 
 	return nil, ErrInvalidID
 }
 
-func (r *queryResolver) Sellers(ctx context.Context, pagination *PaginationInput, ids []string) ([]*AccountSeller, error) {
+func (r *queryResolver) GetSellers(ctx context.Context, pagination *PaginationInput, ids []string) ([]*AccountSeller, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
@@ -85,7 +130,6 @@ func (r *queryResolver) Sellers(ctx context.Context, pagination *PaginationInput
 		for _, a := range accounts {
 			sellers = append(sellers, &AccountSeller{
 				StoreName: a.StoreName,
-				ID:        a.ID,
 				FirstName: a.FirstName,
 				LastName:  a.LastName,
 				Phone:     a.Phone,
@@ -98,7 +142,7 @@ func (r *queryResolver) Sellers(ctx context.Context, pagination *PaginationInput
 	return nil, ErrInvalidID
 }
 
-func (r *queryResolver) Products(ctx context.Context, pagination *PaginationInput, query *string, id *string) ([]*Product, error) {
+func (r *queryResolver) GetProducts(ctx context.Context, pagination *PaginationInput, query *string, id *string) ([]*Product, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
@@ -144,7 +188,7 @@ func (r *queryResolver) Products(ctx context.Context, pagination *PaginationInpu
 	return products, nil
 }
 
-func (r *queryResolver) Orders(ctx context.Context, id *string) ([]*Order, error) {
+func (r *queryResolver) GetOrders(ctx context.Context, id *string) ([]*Order, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 

@@ -42,10 +42,7 @@ func (m *mutationResolver) CreateUser(ctx context.Context, email string, passwor
 }
 
 func (m *mutationResolver) CreateAccountBuyer(ctx context.Context, in AccountBuyerInput) (*AccountBuyer, error) {
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
-	defer cancel()
-
-	userAuth, err := m.GetUserContext(ctx)
+	userAuth, err := GetUserContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +64,6 @@ func (m *mutationResolver) CreateAccountBuyer(ctx context.Context, in AccountBuy
 	}
 
 	return &AccountBuyer{
-		ID:        a.ID,
 		FirstName: a.FirstName,
 		LastName:  a.LastName,
 		Phone:     a.Phone,
@@ -80,7 +76,7 @@ func (m *mutationResolver) CreateAccountSeller(ctx context.Context, in AccountSe
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	userAuth, err := m.GetUserContext(ctx)
+	userAuth, err := GetUserContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +98,6 @@ func (m *mutationResolver) CreateAccountSeller(ctx context.Context, in AccountSe
 	}
 
 	return &AccountSeller{
-		ID:        a.ID,
 		StoreName: a.StoreName,
 		FirstName: a.FirstName,
 		LastName:  a.LastName,
@@ -112,15 +107,20 @@ func (m *mutationResolver) CreateAccountSeller(ctx context.Context, in AccountSe
 	}, nil
 }
 
-func (m *mutationResolver) UpdateAccountBuyer(ctx context.Context, in AccountBuyerInput, id string) (*AccountBuyer, error) {
+func (m *mutationResolver) UpdateAccountBuyer(ctx context.Context, in AccountBuyerInput) (*AccountBuyer, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
+
+	userAuth, err := GetUserContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	data := &pb.AccountBuyer{}
 	req := MapGraphQLInputToRequest(in, TypeUpdate)
 	switch v := req.(type) {
 	case *pb.AccountBuyer:
-		v.Id = id
+		v.Id = userAuth.ID
 		data = v
 	default:
 		return nil, ErrInvalidInfo
@@ -132,7 +132,6 @@ func (m *mutationResolver) UpdateAccountBuyer(ctx context.Context, in AccountBuy
 	}
 
 	return &AccountBuyer{
-		ID:        a.Id,
 		FirstName: a.BaseInfo.FirstName,
 		LastName:  a.BaseInfo.LastName,
 		Phone:     a.BaseInfo.Phone,
@@ -141,15 +140,20 @@ func (m *mutationResolver) UpdateAccountBuyer(ctx context.Context, in AccountBuy
 	}, nil
 }
 
-func (m *mutationResolver) UpdateAccountSeller(ctx context.Context, in AccountSellerInput, id string) (*AccountSeller, error) {
+func (m *mutationResolver) UpdateAccountSeller(ctx context.Context, in AccountSellerInput) (*AccountSeller, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
+
+	userAuth, err := GetUserContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	data := &pb.AccountSeller{}
 	req := MapGraphQLInputToRequest(in, TypeUpdate)
 	switch v := req.(type) {
 	case *pb.AccountSeller:
-		v.Id = id
+		v.Id = userAuth.ID
 		data = v
 	default:
 		return nil, ErrInvalidInfo
@@ -162,7 +166,6 @@ func (m *mutationResolver) UpdateAccountSeller(ctx context.Context, in AccountSe
 	}
 
 	return &AccountSeller{
-		ID:        a.Id,
 		FirstName: a.BaseInfo.FirstName,
 		LastName:  a.BaseInfo.LastName,
 		Phone:     a.BaseInfo.Phone,
@@ -264,7 +267,12 @@ func (m *mutationResolver) CreateProduct(ctx context.Context, in ProductInput) (
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	p, err := m.server.catalogClient.PostProduct(ctx, in.Name, in.Description, in.SellerID, in.Price, uint32(in.Quantity))
+	userAuth, err := GetUserContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := m.server.catalogClient.PostProduct(ctx, in.Name, in.Description, userAuth.ID, in.Price, uint32(in.Quantity))
 	if err != nil {
 		return nil, err
 	}
@@ -320,7 +328,12 @@ func (m *mutationResolver) CreateOrder(ctx context.Context, in OrderInput) (*Ord
 		})
 	}
 
-	order, err := m.server.orderClient.PostOrder(ctx, in.AccountID, products)
+	userAuth, err := GetUserContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	order, err := m.server.orderClient.PostOrder(ctx, userAuth.ID, products)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -337,13 +350,4 @@ func (m *mutationResolver) DeleteOrder(ctx context.Context, id string) (string, 
 	// ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	// defer cancel()
 	return id, nil
-}
-
-func (m *mutationResolver) GetUserContext(ctx context.Context) (UserAuth, error) {
-	u, ok := ctx.Value(userCtxKey).(UserAuth)
-	if !ok {
-		return u, &gqlerror.Error{Message: "user not found in context"}
-	}
-
-	return u, nil
 }

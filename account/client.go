@@ -14,8 +14,13 @@ type Client struct {
 	service pb.AccountServiceClient
 }
 
-func NewClient(url string) (*Client, error) {
-	conn, err := grpc.NewClient(url, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func NewClient(url string, opts ...grpc.DialOption) (*Client, error) {
+	defaultOpts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	}
+	finalOpts := append(defaultOpts, opts...)
+
+	conn, err := grpc.NewClient(url, finalOpts...)
 	if err != nil {
 		return nil, err
 	}

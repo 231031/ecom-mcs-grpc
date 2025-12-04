@@ -2,8 +2,6 @@ package account
 
 import (
 	"context"
-
-	"github.com/segmentio/ksuid"
 )
 
 type Service interface {
@@ -18,11 +16,6 @@ type Service interface {
 	GetAccountSellers(ctx context.Context, ids []string, skip uint64, take uint64) ([]Seller, error)
 }
 
-type Account struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
 type AccountService struct {
 	repository Repository
 }
@@ -32,9 +25,6 @@ func NewService(r Repository) Service {
 }
 
 func (s *AccountService) PostAccountSeller(ctx context.Context, a Seller) (*Seller, error) {
-	// get id from context
-	a.ID = ksuid.New().String()
-
 	if err := s.repository.CreateAccountSeller(ctx, a); err != nil {
 		return nil, err
 	}
@@ -42,9 +32,6 @@ func (s *AccountService) PostAccountSeller(ctx context.Context, a Seller) (*Sell
 }
 
 func (s *AccountService) PostAccountBuyer(ctx context.Context, a Buyer) (*Buyer, error) {
-	// get id from context
-	a.ID = ksuid.New().String()
-
 	if err := s.repository.CreateAccountBuyer(ctx, a); err != nil {
 		return nil, err
 	}
